@@ -1,7 +1,7 @@
 #pragma once
 #include "operator.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 // Base for any activation that operates element-wise with no extra params
 class ElementwiseOperator : public IOperator {
@@ -38,4 +38,4 @@ class SigmoidOperator : public ElementwiseOperator {
     }
 };
 
-} // namespace ml
+} // namespace gdinfer

@@ -97,25 +97,25 @@ uint32_t MLInferenceEngine::register_model(Ref<ONNXResource> resource) {
     ERR_FAIL_COND_V_MSG(resource.is_null(), 0, "InferenceEngine: null ONNXResource.");
 
     const PackedByteArray data = resource->get_data();
-    auto parse_result = ml::passes::parse(data.ptr(), data.size());
+    auto parse_result = gdinfer::passes::parse(data.ptr(), data.size());
     ERR_FAIL_COND_V_MSG(
         !parse_result.status.success,
         0,
         ("InferenceEngine: parse failed: " + parse_result.status.error).c_str());
 
-    auto logical_validation_result = ml::passes::validate_parse(parse_result.graph);
+    auto logical_validation_result = gdinfer::passes::validate_parse(parse_result.graph);
     ERR_FAIL_COND_V_MSG(
         !logical_validation_result.success,
         0,
         ("InferenceEngine: logical graph validation failed: " + logical_validation_result.error).c_str());
 
-    auto lower_result = ml::passes::lower(parse_result.graph);
+    auto lower_result = gdinfer::passes::lower(parse_result.graph);
     ERR_FAIL_COND_V_MSG(
         !lower_result.status.success,
         0,
         ("InferenceEngine: lowering failed: " + lower_result.status.error).c_str());
 
-    auto validation_result = ml::passes::lowering_validation(lower_result.graph);
+    auto validation_result = gdinfer::passes::lowering_validation(lower_result.graph);
     ERR_FAIL_COND_V_MSG(
         !validation_result.success,
         0,
@@ -179,7 +179,7 @@ void MLInferenceEngine::print_model(uint32_t model_rid) {
         "InferenceEngine: model " + String::num(model_rid) + " not found.");
 
     auto it = _graphs.find(model_rid);
-    ml::Utils::print(it->second.graph);
+    gdinfer::Utils::print(it->second.graph);
 }
 
 void MLInferenceEngine::destroy_task(Ref<InferenceTask> task) {
@@ -252,11 +252,11 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     auto it = _graphs.find(task->graph_id);
     ERR_FAIL_COND_MSG(it == _graphs.end(), "InferenceEngine: graph not found.");
 
-    const ml::Physical::Graph& graph = it->second.graph;
-    Ref<ml::TensorResourceManager> initializers_tm = it->second.initializers_tm;
+    const gdinfer::Physical::Graph& graph = it->second.graph;
+    Ref<gdinfer::TensorResourceManager> initializers_tm = it->second.initializers_tm;
 
     // 1. Collect input shapes from the descriptor
-    ml::ShapeTable input_shapes;
+    gdinfer::ShapeTable input_shapes;
     for (const auto& [name, descriptor] : task->descriptor->inputs) {
         auto& handler = _input_registry.get(descriptor->type);
         input_shapes[name] = handler->get_shape(descriptor);
@@ -268,11 +268,11 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     }
 
     // 2. Shape inference - forward pass to compute all intermediate tensor shapes.
-    auto infer_result = ml::passes::infer_shapes(graph, input_shapes);
+    auto infer_result = gdinfer::passes::infer_shapes(graph, input_shapes);
     ERR_FAIL_COND_MSG(
         !infer_result.status.success,
         ("MLInferenceEngine: shape inference failed: " + infer_result.status.error).c_str());
-    const ml::ShapeTable& shape_table = infer_result.shapes;
+    const gdinfer::ShapeTable& shape_table = infer_result.shapes;
 
     // 3. Pre-allocate all activation buffers before recording the compute list.
     _allocate_activations(graph, shape_table, task->activations_tm);
@@ -280,7 +280,7 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     _capture_timestamp(String::num(task->task_id) + ":begin");
 
     // 4. Upload model inputs to GPU.
-    ml::InputHandlerContext in_ctx = {
+    gdinfer::InputHandlerContext in_ctx = {
         .rd = _rd,
         .activations_tm = task->activations_tm,
         .compute_list = 0,
@@ -303,15 +303,15 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     _rd->compute_list_add_barrier(compute_list);
 
     uint32_t node_index = 0;
-    for (const ml::Physical::Node& node : graph.nodes) {
+    for (const gdinfer::Physical::Node& node : graph.nodes) {
         _run_node(node, compute_list, initializers_tm, task->activations_tm, shape_table);
         _rd->compute_list_add_barrier(compute_list);
         _capture_timestamp(
             String::num(task->task_id) + ":" +
-            String::num(node_index++) + "_" + ml::Utils::op_name(node.op).c_str());
+            String::num(node_index++) + "_" + gdinfer::Utils::op_name(node.op).c_str());
     }
 
-    ml::OutputHandlerContext out_ctx = {
+    gdinfer::OutputHandlerContext out_ctx = {
         .rd = _rd,
         .activations_tm = task->activations_tm,
         .compute_list = compute_list,
@@ -336,14 +336,14 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
 }
 
 void MLInferenceEngine::_allocate_activations(
-    const ml::Physical::Graph& graph,
-    const ml::ShapeTable& shape_table,
-    Ref<ml::TensorResourceManager> activations_tm) {
+    const gdinfer::Physical::Graph& graph,
+    const gdinfer::ShapeTable& shape_table,
+    Ref<gdinfer::TensorResourceManager> activations_tm) {
 
     for (const auto& node : graph.nodes) {
         // Non-permutation Reshape nodes create zero-copy aliases, not real GPU buffers.
-        if (node.op == ml::Physical::Operator::Reshape) {
-            const auto& attrs = std::get<ml::Physical::ReshapeAttrs>(node.attributes);
+        if (node.op == gdinfer::Physical::Operator::Reshape) {
+            const auto& attrs = std::get<gdinfer::Physical::ReshapeAttrs>(node.attributes);
             if (!attrs.is_permutation) continue;
         }
         for (const auto& name : node.outputs) {
@@ -356,16 +356,16 @@ void MLInferenceEngine::_allocate_activations(
 }
 
 void MLInferenceEngine::_run_node(
-    const ml::Physical::Node& node,
+    const gdinfer::Physical::Node& node,
     int64_t compute_list,
-    Ref<ml::TensorResourceManager> initializers_tm,
-    Ref<ml::TensorResourceManager> activations_tm,
-    const ml::ShapeTable& shape_table) {
+    Ref<gdinfer::TensorResourceManager> initializers_tm,
+    Ref<gdinfer::TensorResourceManager> activations_tm,
+    const gdinfer::ShapeTable& shape_table) {
 
     auto op = _operator_registry.get(node.op);
     ERR_FAIL_COND_MSG(op == nullptr, "MLInferenceEngine: unsupported operator, skipping node.");
 
-    ml::OperatorContext ctx{
+    gdinfer::OperatorContext ctx{
         .rd = _rd,
         .initializers_tm = initializers_tm,
         .activations_tm = activations_tm,
@@ -390,8 +390,8 @@ bool MLInferenceEngine::_has_graph(uint32_t graph_rid) {
     return _graphs.find(graph_rid) != _graphs.end();
 }
 bool MLInferenceEngine::_validate_inputs(
-    const ml::Physical::Graph& graph,
-    ml::ShapeTable& shape_table) {
+    const gdinfer::Physical::Graph& graph,
+    gdinfer::ShapeTable& shape_table) {
     // Make sure that all the required input shapes are defined and valid.
     for (const auto& input_name : graph.input_names) {
         ERR_FAIL_COND_V_MSG(
@@ -411,7 +411,7 @@ bool MLInferenceEngine::_validate_inputs(
             shape.empty() || shape.size() != expected_shape.size(),
             false,
             "InferenceEngine: invalid shape for input '" + String(input_name.c_str()) + "': expected " + String::num(expected_shape.size()) + " dimensions, got " + String::num(shape.size()) +
-                " Input shape: " + ml::Utils::shape_to_str(shape) + ", expected shape: " + ml::Utils::shape_to_str(expected_shape));
+                " Input shape: " + gdinfer::Utils::shape_to_str(shape) + ", expected shape: " + gdinfer::Utils::shape_to_str(expected_shape));
 
         // Validate tensor dimensions
         for (uint32_t i = 0; i < shape.size(); i++) {
@@ -423,7 +423,7 @@ bool MLInferenceEngine::_validate_inputs(
                 ERR_FAIL_V_MSG(
                     false,
                     "InferenceEngine: invalid shape for input '" + String(input_name.c_str()) + "': dimension " + String::num(i) + " must be positive, got " + String::num(current_dim) +
-                        " Input shape: " + ml::Utils::shape_to_str(shape) + ", expected shape: " + ml::Utils::shape_to_str(expected_shape));
+                        " Input shape: " + gdinfer::Utils::shape_to_str(shape) + ", expected shape: " + gdinfer::Utils::shape_to_str(expected_shape));
             }
 
             if (expected_dim <= 0) {
@@ -435,7 +435,7 @@ bool MLInferenceEngine::_validate_inputs(
                 ERR_FAIL_V_MSG(
                     false,
                     "InferenceEngine: invalid shape for input '" + String(input_name.c_str()) + "': expected dimension " + String::num(i) + " to be " + String::num(expected_dim) + ", got " + String::num(current_dim) +
-                        " Input shape: " + ml::Utils::shape_to_str(shape) + ", expected shape: " + ml::Utils::shape_to_str(expected_shape));
+                        " Input shape: " + gdinfer::Utils::shape_to_str(shape) + ", expected shape: " + gdinfer::Utils::shape_to_str(expected_shape));
             }
         }
     }

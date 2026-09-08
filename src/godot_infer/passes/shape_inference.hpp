@@ -1,7 +1,7 @@
 #pragma once
 #include "core/core.hpp"
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 struct ShapeInferenceResult {
     ShapeTable shapes;
@@ -18,4 +18,4 @@ ShapeInferenceResult infer_shapes(
     const Physical::Graph& graph,
     const ShapeTable& input_shapes);
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

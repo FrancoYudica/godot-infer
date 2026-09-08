@@ -25,7 +25,7 @@ class InferenceTask : public RefCounted {
         uint32_t graph_id,
         RenderingDevice* rd,
         Ref<InferenceDescriptor> descriptor,
-        ml::StorageBufferPool* buffer_pool);
+        gdinfer::StorageBufferPool* buffer_pool);
     void emit_completed();
     void destroy(RenderingDevice* rd);
     bool is_completed() const {
@@ -39,7 +39,7 @@ class InferenceTask : public RefCounted {
     Dictionary get_performance_report() const;
 
   public:
-    Ref<ml::TensorResourceManager> activations_tm;
+    Ref<gdinfer::TensorResourceManager> activations_tm;
     uint32_t task_id = 0;
     uint32_t graph_id;
     Ref<InferenceDescriptor> descriptor;

@@ -4,12 +4,12 @@
 #include <godot_cpp/classes/rd_shader_spirv.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 bool Col2ImOperator::init(godot::RenderingDevice* rd) {
     const String path = "shaders/col2im.glsl";
-    const String& shader_path = ml::Utils::get_project_relative_path(path);
-    _shader = ml::Utils::load_shader(rd, shader_path);
+    const String& shader_path = gdinfer::Utils::get_project_relative_path(path);
+    _shader = gdinfer::Utils::load_shader(rd, shader_path);
 
     ERR_FAIL_COND_V_MSG(
         !_shader.is_valid(),
@@ -20,8 +20,8 @@ bool Col2ImOperator::init(godot::RenderingDevice* rd) {
     return _shader.is_valid() && _pipeline.is_valid();
 }
 
-void ml::Col2ImOperator::dispatch(
-    const ml::Physical::Node& node,
+void gdinfer::Col2ImOperator::dispatch(
+    const gdinfer::Physical::Node& node,
     const OperatorContext& ctx) {
 
     ERR_FAIL_COND_MSG(node.outputs.size() != 1, "Col2Im: expected 1 output");
@@ -34,8 +34,8 @@ void ml::Col2ImOperator::dispatch(
     };
 
     RID input_sb = ctx.activations_tm->get_buffer_rid(node.inputs[0]);
-    RID bias_sb  = resolve(node.inputs[1]);
-    RID out_buf  = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
+    RID bias_sb = resolve(node.inputs[1]);
+    RID out_buf = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
 
     // All shapes come from the pre-computed ShapeTable.
     // meta4d = [b, out_c, out_h, out_w] written by shape inference.
@@ -61,8 +61,8 @@ void ml::Col2ImOperator::dispatch(
 
     TypedArray<RDUniform> uniforms;
     uniforms.push_back(make_uniform(input_sb, 0));
-    uniforms.push_back(make_uniform(out_buf,  1));
-    uniforms.push_back(make_uniform(bias_sb,  2));
+    uniforms.push_back(make_uniform(out_buf, 1));
+    uniforms.push_back(make_uniform(bias_sb, 2));
 
     RID uniform_set_rid = ctx.rd->uniform_set_create(uniforms, _shader, 0);
     ctx.frame_deletion_stack->push([uniform_set_rid, rd = ctx.rd]() {
@@ -99,7 +99,7 @@ void ml::Col2ImOperator::dispatch(
     ctx.rd->compute_list_dispatch(ctx.compute_list, groups_x, groups_y, groups_z);
 }
 
-void ml::Col2ImOperator::destroy(godot::RenderingDevice* rd) {
+void gdinfer::Col2ImOperator::destroy(godot::RenderingDevice* rd) {
     if (_pipeline.is_valid()) {
         rd->free_rid(_pipeline);
     }
@@ -108,4 +108,4 @@ void ml::Col2ImOperator::destroy(godot::RenderingDevice* rd) {
     }
 }
 
-} // namespace ml
+} // namespace gdinfer

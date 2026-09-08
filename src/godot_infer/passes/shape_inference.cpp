@@ -1,8 +1,8 @@
 #include "shape_inference.hpp"
 
-using namespace ml::Physical;
+using namespace gdinfer::Physical;
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 // Helper: looks up a shape and sets an error on result if missing.
 static const std::vector<int64_t>* require(
@@ -275,4 +275,4 @@ ShapeInferenceResult infer_shapes(
     return result;
 }
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

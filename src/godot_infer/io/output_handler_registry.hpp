@@ -1,20 +1,20 @@
 #pragma once
 #include "output_handler.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 class OutputHandlerRegistry {
   public:
     bool init(godot::RenderingDevice* rd);
 
-    const std::unique_ptr<ml::IOutputHandler>& get(
-        const ml::OutputType& desc) const;
+    const std::unique_ptr<gdinfer::IOutputHandler>& get(
+        const gdinfer::OutputType& desc) const;
     void destroy(godot::RenderingDevice* rd);
 
   private:
     template <typename T>
     bool _register(
-        ml::OutputType type,
+        gdinfer::OutputType type,
         godot::RenderingDevice* rd) {
         auto impl = std::make_unique<T>();
         if (impl->init(rd)) {
@@ -23,8 +23,8 @@ class OutputHandlerRegistry {
         }
         return false;
     }
-    std::unordered_map<ml::OutputType, std::unique_ptr<ml::IOutputHandler>>
+    std::unordered_map<gdinfer::OutputType, std::unique_ptr<gdinfer::IOutputHandler>>
         _handlers;
 };
 
-} // namespace ml
+} // namespace gdinfer

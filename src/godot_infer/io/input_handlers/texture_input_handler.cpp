@@ -2,7 +2,7 @@
 
 #include <godot_cpp/classes/image.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 bool TextureInputHandler::upload(
     const std::unique_ptr<InputDesc::BaseData>& desc,
@@ -60,11 +60,19 @@ bool TextureInputHandler::upload(
             floats[2 * pixels + i] = p[2];
             floats[3 * pixels + i] = p[3];
             break;
-        case 2: floats[i] = p[0]; break; // RED
-        case 3: floats[i] = p[1]; break; // GREEN
-        case 4: floats[i] = p[2]; break; // BLUE
-        case 5: floats[i] = p[3]; break; // ALPHA
-        default: // GRAYSCALE (mode 6)
+        case 2:
+            floats[i] = p[0];
+            break; // RED
+        case 3:
+            floats[i] = p[1];
+            break; // GREEN
+        case 4:
+            floats[i] = p[2];
+            break; // BLUE
+        case 5:
+            floats[i] = p[3];
+            break; // ALPHA
+        default:   // GRAYSCALE (mode 6)
             floats[i] = 0.299f * p[0] + 0.587f * p[1] + 0.114f * p[2];
             break;
         }
@@ -108,4 +116,4 @@ std::vector<int64_t> TextureInputHandler::get_shape(const std::unique_ptr<InputD
 void TextureInputHandler::dispatch(const InputHandlerContext& ctx) {
 }
 
-} // namespace ml
+} // namespace gdinfer

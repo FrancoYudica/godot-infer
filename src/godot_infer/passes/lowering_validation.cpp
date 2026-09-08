@@ -2,7 +2,7 @@
 
 #include <unordered_set>
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 static std::string node_ctx(size_t idx, Physical::Operator op) {
     return "[node " + std::to_string(idx) + " (" + Utils::op_name(op) + ")] ";
@@ -118,7 +118,7 @@ static OperationResult check_node_attributes(
         }
         break;
 
-    case ml::Physical::Operator::MaxPool2D:
+    case gdinfer::Physical::Operator::MaxPool2D:
         if (!std::holds_alternative<Physical::MaxPool2DAttrs>(node.attributes))
             return {false, ctx + "expected MaxPool2DAttributes variant"};
         break;
@@ -160,4 +160,4 @@ OperationResult lowering_validation(const Physical::Graph& graph) {
 
     return OPERATION_OK;
 }
-} // namespace ml::passes
+} // namespace gdinfer::passes

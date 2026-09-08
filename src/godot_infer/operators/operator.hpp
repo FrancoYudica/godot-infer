@@ -4,7 +4,7 @@
 
 #include <godot_cpp/classes/rendering_device.hpp>
 
-namespace ml {
+namespace gdinfer {
 struct OperatorContext {
     RenderingDevice* rd;
     Ref<TensorResourceManager> initializers_tm;
@@ -19,9 +19,9 @@ class IOperator {
     virtual ~IOperator() = default;
     virtual bool init(godot::RenderingDevice* rd) = 0;
     virtual void dispatch(
-        const ml::Physical::Node& node,
+        const gdinfer::Physical::Node& node,
         const OperatorContext& ctx) = 0;
     virtual void destroy(godot::RenderingDevice* rd) = 0;
 };
 
-} // namespace ml
+} // namespace gdinfer

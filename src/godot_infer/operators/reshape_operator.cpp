@@ -4,12 +4,12 @@
 #include <godot_cpp/classes/rd_shader_spirv.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 bool ReshapeOperator::init(godot::RenderingDevice* rd) {
     const String path = "shaders/matrix_transpose.glsl";
-    const String& shader_path = ml::Utils::get_project_relative_path(path);
-    _shader = ml::Utils::load_shader(rd, shader_path);
+    const String& shader_path = gdinfer::Utils::get_project_relative_path(path);
+    _shader = gdinfer::Utils::load_shader(rd, shader_path);
 
     ERR_FAIL_COND_V_MSG(
         !_shader.is_valid(),
@@ -166,4 +166,4 @@ void ReshapeOperator::destroy(godot::RenderingDevice* rd) {
         rd->free_rid(_shader);
 }
 
-} // namespace ml
+} // namespace gdinfer

@@ -1,11 +1,11 @@
 #include "operator.hpp"
 
-namespace ml {
+namespace gdinfer {
 class Conv2DOperator : public IOperator {
   public:
     virtual bool init(godot::RenderingDevice* rd) override;
     virtual void dispatch(
-        const ml::Physical::Node& node,
+        const gdinfer::Physical::Node& node,
         const OperatorContext& ctx) override;
     void destroy(godot::RenderingDevice* rd) override;
 
@@ -31,4 +31,4 @@ class Conv2DOperator : public IOperator {
     godot::RID _pipeline;
 };
 
-} // namespace ml
+} // namespace gdinfer

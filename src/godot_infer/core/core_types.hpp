@@ -8,7 +8,7 @@
 #include <variant> // IWYU pragma: export
 #include <vector>
 
-namespace ml {
+namespace gdinfer {
 
 // Maps every tensor name (inputs, initializers, intermediates) to its concrete shape.
 // Populated by the shape inference pass before each inference call.
@@ -19,9 +19,9 @@ struct OperationResult {
     std::string error;
 };
 
-#define OPERATION_OK \
-    {                \
-        true, {}     \
+#define OPERATION_OK                 \
+    {                                \
+        .success = true, .error = {} \
     }
 
 /**
@@ -32,4 +32,4 @@ struct Tensor {
     std::vector<int64_t> shape;
     std::vector<float> data;
 };
-} // namespace ml
+} // namespace gdinfer

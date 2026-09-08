@@ -1,7 +1,7 @@
 #pragma once
 #include "core/core.hpp" // IWYU pragma: export
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 /**
  * Validates a Logical::Graph immediately after parsing, before lowering.
@@ -11,4 +11,4 @@ namespace ml::passes {
  */
 OperationResult validate_parse(const Logical::Graph& graph);
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

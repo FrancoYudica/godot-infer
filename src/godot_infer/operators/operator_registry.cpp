@@ -8,7 +8,7 @@
 #include "operators/max_pool_2d_operator.hpp"
 #include "operators/reshape_operator.hpp"
 
-namespace ml {
+namespace gdinfer {
 bool OperatorRegistry::init(godot::RenderingDevice* rd) {
     // Register all supported operators
     ERR_FAIL_COND_V_MSG(
@@ -66,4 +66,4 @@ void OperatorRegistry::destroy(godot::RenderingDevice* rd) {
     _operators.clear();
 }
 
-} // namespace ml
+} // namespace gdinfer

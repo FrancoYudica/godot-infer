@@ -26,7 +26,7 @@ static bool is_supported_format(
     }
 }
 
-namespace ml {
+namespace gdinfer {
 
 bool TextureOutputHandlerCompute::init(godot::RenderingDevice* rd) {
     // Shader and pipeline creation
@@ -148,4 +148,4 @@ Variant TextureOutputHandlerCompute::download(
     Ref<TensorResourceManager> activations_tm) {
     return nullptr;
 }
-} // namespace ml
+} // namespace gdinfer

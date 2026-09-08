@@ -3,7 +3,7 @@
 #include "output_handlers/float_array_output_handler.hpp"
 #include "output_handlers/texture_output_handler_compute.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 bool OutputHandlerRegistry::init(godot::RenderingDevice* rd) {
     // Register all supported operators
@@ -20,8 +20,8 @@ bool OutputHandlerRegistry::init(godot::RenderingDevice* rd) {
     return true;
 }
 
-const std::unique_ptr<ml::IOutputHandler>& OutputHandlerRegistry::get(
-    const ml::OutputType& desc) const {
+const std::unique_ptr<gdinfer::IOutputHandler>& OutputHandlerRegistry::get(
+    const gdinfer::OutputType& desc) const {
     return _handlers.at(desc);
 }
 
@@ -31,4 +31,4 @@ void OutputHandlerRegistry::destroy(godot::RenderingDevice* rd) {
     }
 }
 
-} // namespace ml
+} // namespace gdinfer

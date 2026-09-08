@@ -9,7 +9,7 @@
 
 using namespace godot;
 
-namespace ml::Utils {
+namespace gdinfer::Utils {
 
 godot::String get_project_relative_path(
     const godot::String& addon_relative_path) {
@@ -129,4 +129,4 @@ String shape_to_str(const std::vector<int64_t>& shape) {
     str += "]";
     return str;
 }
-} // namespace ml::Utils
+} // namespace gdinfer::Utils

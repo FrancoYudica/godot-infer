@@ -7,7 +7,7 @@
 
 using namespace godot;
 
-namespace ml {
+namespace gdinfer {
 
 struct _TensorBuffer {
     std::vector<int64_t> shape;
@@ -75,4 +75,4 @@ class TensorResourceManager : public RefCounted {
     std::unordered_map<std::string, _TensorBuffer> _tensors_data;
     std::unordered_map<std::string, _TensorAlias> _aliases;
 };
-} // namespace ml
+} // namespace gdinfer

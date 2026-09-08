@@ -2,7 +2,7 @@
 #include "core/core.hpp"
 #include "operator.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 class OperatorRegistry {
   public:
@@ -27,4 +27,4 @@ class OperatorRegistry {
     std::unordered_map<Physical::Operator, std::unique_ptr<IOperator>> _operators;
 };
 
-} // namespace ml
+} // namespace gdinfer

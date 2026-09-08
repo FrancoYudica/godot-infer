@@ -6,7 +6,7 @@
 #include "io/io.hpp"
 #include "io/onnx_resource.hpp"
 #include "operators/operators.hpp"
-#include "passes/parser.hpp"
+#include "stages/compile/parser/parser.hpp"
 #include "tensors/tensors.hpp"
 
 #include <godot_cpp/classes/node.hpp>
@@ -17,8 +17,8 @@
 namespace godot {
 
 struct GraphContext {
-    ml::Physical::Graph graph;
-    Ref<ml::TensorResourceManager> initializers_tm;
+    gdinfer::Physical::Graph graph;
+    Ref<gdinfer::TensorResourceManager> initializers_tm;
 };
 
 class MLInferenceEngine : public RefCounted {
@@ -48,21 +48,21 @@ class MLInferenceEngine : public RefCounted {
     void _process_pending_tasks();
     void _process_task(Ref<InferenceTask> task);
     void _run_node(
-        const ml::Physical::Node& node,
+        const gdinfer::Physical::Node& node,
         int64_t compute_list,
-        Ref<ml::TensorResourceManager> initializers_tm,
-        Ref<ml::TensorResourceManager> activations_tm,
-        const ml::ShapeTable& shape_table);
+        Ref<gdinfer::TensorResourceManager> initializers_tm,
+        Ref<gdinfer::TensorResourceManager> activations_tm,
+        const gdinfer::ShapeTable& shape_table);
     void _allocate_activations(
-        const ml::Physical::Graph& graph,
-        const ml::ShapeTable& shape_table,
-        Ref<ml::TensorResourceManager> activations_tm);
+        const gdinfer::Physical::Graph& graph,
+        const gdinfer::ShapeTable& shape_table,
+        Ref<gdinfer::TensorResourceManager> activations_tm);
 
     void _free_all_resources();
     bool _has_graph(uint32_t graph_rid);
     bool _validate_inputs(
-        const ml::Physical::Graph& graph,
-        ml::ShapeTable& shape_table);
+        const gdinfer::Physical::Graph& graph,
+        gdinfer::ShapeTable& shape_table);
 
     void _capture_timestamp(const String& label);
     void _collect_task_timestamps();
@@ -71,10 +71,10 @@ class MLInferenceEngine : public RefCounted {
 
   private:
     RenderingDevice* _rd;
-    ml::StorageBufferPool _sb_pool;
-    ml::OperatorRegistry _operator_registry;
-    ml::InputHandlerRegistry _input_registry;
-    ml::OutputHandlerRegistry _output_registry;
+    gdinfer::StorageBufferPool _sb_pool;
+    gdinfer::OperatorRegistry _operator_registry;
+    gdinfer::InputHandlerRegistry _input_registry;
+    gdinfer::OutputHandlerRegistry _output_registry;
     std::unordered_map<uint32_t, GraphContext> _graphs;
     std::vector<Ref<InferenceTask>> _pending_tasks;
     std::vector<Ref<InferenceTask>> _executing_tasks;
@@ -83,7 +83,7 @@ class MLInferenceEngine : public RefCounted {
     bool _destroying = false;
     bool _capture_timestamps = false;
 
-    ml::DeletionStack _frame_deletion_stack;
+    gdinfer::DeletionStack _frame_deletion_stack;
 
     uint32_t _next_graph_id = 1;
     uint32_t _next_task_id = 0;

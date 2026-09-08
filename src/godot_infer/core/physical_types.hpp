@@ -1,7 +1,7 @@
 #pragma once
 #include "core_types.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 namespace Physical {
 
@@ -111,4 +111,4 @@ struct Graph {
     std::unordered_map<std::string, Tensor> initializers;
 };
 } // namespace Physical
-} // namespace ml
+} // namespace gdinfer

@@ -69,8 +69,8 @@ void InferenceDescriptor::add_float_array_input(
 
     std::vector<int64_t> vector_shape(shape.ptr(), shape.ptr() + shape.size());
 
-    auto desc = std::make_unique<ml::InputDesc::FloatArray>();
-    desc->type = ml::InputType::FloatArray;
+    auto desc = std::make_unique<gdinfer::InputDesc::FloatArray>();
+    desc->type = gdinfer::InputType::FloatArray;
     desc->tensor_name = tensor_name.utf8().get_data();
     desc->data = data;
     desc->shape = vector_shape;
@@ -87,8 +87,8 @@ void InferenceDescriptor::add_texture_input(
         inputs.find(tensor_name.utf8().get_data()) != inputs.end(),
         "Input for tensor '" + tensor_name + "' already exists.");
 
-    auto desc = std::make_unique<ml::InputDesc::Texture>();
-    desc->type = ml::InputType::Texture2D;
+    auto desc = std::make_unique<gdinfer::InputDesc::Texture>();
+    desc->type = gdinfer::InputType::Texture2D;
     desc->tensor_name = tensor_name.utf8().get_data();
     desc->channels = (load_mode == LoadTextureMode::TEXTURE_LOAD_RGBA) ? 4u : (load_mode == LoadTextureMode::TEXTURE_LOAD_RGB) ? 3u
                                                                                                                                : 1u;
@@ -106,8 +106,8 @@ void InferenceDescriptor::add_float_array_output(
         outputs.find(output_name.utf8().get_data()) != outputs.end(),
         "User already defined an output named '" + output_name + "'.");
 
-    auto desc = std::make_unique<ml::OutputDesc::FloatArray>();
-    desc->type = ml::OutputType::FloatArray;
+    auto desc = std::make_unique<gdinfer::OutputDesc::FloatArray>();
+    desc->type = gdinfer::OutputType::FloatArray;
     desc->tensor_name = tensor_name.utf8().get_data();
     outputs[output_name.utf8().get_data()] = std::move(desc);
 }
@@ -119,8 +119,8 @@ void InferenceDescriptor::add_texture_output(
         outputs.find(tensor_name.utf8().get_data()) != outputs.end(),
         "User already defined an output named '" + tensor_name + "'.");
 
-    auto desc = std::make_unique<ml::OutputDesc::Texture>();
-    desc->type = ml::OutputType::Texture2D;
+    auto desc = std::make_unique<gdinfer::OutputDesc::Texture>();
+    desc->type = gdinfer::OutputType::Texture2D;
     desc->tensor_name = tensor_name.utf8().get_data();
     desc->target_texture =
         RenderingServer::get_singleton()->texture_get_rd_texture(

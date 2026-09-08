@@ -4,7 +4,7 @@
 #include <godot_cpp/classes/rendering_device.hpp>
 #include <map>
 
-namespace ml {
+namespace gdinfer {
 
 typedef uint32_t StorageBufferHandle;
 
@@ -44,4 +44,4 @@ class StorageBufferPool {
     StorageBufferHandle _next_buffer_handle = 1;
 };
 
-} // namespace ml
+} // namespace gdinfer

@@ -5,7 +5,7 @@
 #include <godot_cpp/classes/rendering_device.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 
-namespace ml {
+namespace gdinfer {
 namespace Utils {
 /**
  * Gets the project-relative path for a given addon-relative path
@@ -53,4 +53,4 @@ godot::String get_iterator_str(Iterator begin, Iterator end, const godot::String
 }
 
 } // namespace Utils
-} // namespace ml
+} // namespace gdinfer

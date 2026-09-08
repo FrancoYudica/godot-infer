@@ -1,11 +1,11 @@
 #include "element_wise_operator.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 bool ElementwiseOperator::init(godot::RenderingDevice* rd) {
     const String path = shader_path();
-    const String& shader_path = ml::Utils::get_project_relative_path(path);
-    _shader = ml::Utils::load_shader(rd, shader_path);
+    const String& shader_path = gdinfer::Utils::get_project_relative_path(path);
+    _shader = gdinfer::Utils::load_shader(rd, shader_path);
 
     ERR_FAIL_COND_V_MSG(
         !_shader.is_valid(),
@@ -76,4 +76,4 @@ void ElementwiseOperator::destroy(godot::RenderingDevice* rd) {
     }
 }
 
-} // namespace ml
+} // namespace gdinfer

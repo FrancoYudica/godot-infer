@@ -83,3 +83,33 @@ Notes:
 - There's no default triplet. `-DVCPKG_TARGET_TRIPLET` is required.
 - If you switch `GODOTCPP_TARGET` (e.g. from `template_debug` to `template_release`) or otherwise change configure-time options on an existing `build/` directory, re-run the configure command again before building. Reusing a stale `build/` directory configured with different options is the most common cause of confusing linker errors (mismatched MSVC runtime, wrong binary variant, etc.).
 - `CMakeLists.txt` pins the MSVC runtime to match vcpkg's static-triplet libs for whichever CMake config you pick (`/MT` for Release, `/MTd` for Debug), working around a godot-cpp CMake quirk where `linux.cmake`/`windows.cmake` disagree on the default.
+
+## 5. Editor support (clangd)
+
+The `build/` directory above uses CMake's Visual Studio generator, which can't produce a `compile_commands.json` at all (that's a limitation of multi-config MSBuild-based generators, not something we can configure around). Without one, clangd falls back to zero compile flags and shows false errors on nearly everything.
+
+The project's `.clangd` points at a separate `build-ide/` directory instead, built with the Ninja generator specifically to produce that file. It's only ever configured, never actually built.
+
+This needs real `cl.exe` (not Clang in any form -- see below), which means running the configure command from a **"Developer PowerShell for VS"** shell (Start menu -> search for it), not a plain PowerShell:
+
+```powershell
+cmake -S src -B build-ide -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static
+```
+
+`compile_commands.json` is fully rewritten every time this command runs, but it's never regenerated on its own since `build-ide/` is never built (only configured) -- there's no build step to trigger CMake's usual auto-reconfigure-on-source-change. **Re-run it whenever you add or remove a `.cpp` file under `godot_infer/`, or edit `CMakeLists.txt`.** Editing the contents of an existing file doesn't require it. clangd watches the file and reloads it automatically, so no language server restart is needed afterward.
+
+### If clangd still shows false STL-related errors
+
+If clangd reports spurious errors deep in `<string>`/`<xstring>`/etc. (e.g. `no type named 'char_type' in std::char_traits<char>`) even though `compile_commands.json` looks correct, compare clangd's bundled Clang version against a standalone LLVM install, if you have one:
+
+```powershell
+clangd --version   # standalone, if installed
+```
+
+Compare that against what the "clangd" Output panel logs on startup (`argv[0]: ...\install\<version>\clangd_<version>\bin\clangd.exe`). We hit exactly this: the VS Code extension's bundled `clangd 22.1.0` produced false STL parsing errors on a very recent MSVC toolset, while a standalone `clangd 22.1.7` (and standalone `clang-tidy`/`clang-cl` from the same LLVM install) parsed the identical `compile_commands.json` cleanly -- confirmed by running `clang-tidy -p build-ide <file>` directly and comparing against clangd's live diagnostics for the same file. If you have a newer standalone clangd available, point the extension at it via your **user** settings (not the shared workspace `.vscode/settings.json`, since the path is machine-specific):
+
+```json
+"clangd.path": "C:\\path\\to\\your\\llvm\\bin\\clangd.exe"
+```
+
+Restart the language server afterward.

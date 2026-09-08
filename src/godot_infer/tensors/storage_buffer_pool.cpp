@@ -1,6 +1,6 @@
 #include "storage_buffer_pool.hpp"
 
-namespace ml {
+namespace gdinfer {
 void StorageBufferPool::init(godot::RenderingDevice* p_rd) {
     _rd = p_rd;
 }
@@ -63,4 +63,4 @@ godot::RID StorageBufferPool::get_rid(StorageBufferHandle p_buffer) {
     return it->second.rid;
 }
 
-} // namespace ml
+} // namespace gdinfer

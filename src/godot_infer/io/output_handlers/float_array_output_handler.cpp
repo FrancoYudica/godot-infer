@@ -2,7 +2,7 @@
 
 using namespace godot;
 
-namespace ml {
+namespace gdinfer {
 
 Variant FloatArrayOutputHandler::download(
     const std::unique_ptr<OutputDesc::BaseData>& desc,
@@ -15,4 +15,4 @@ Variant FloatArrayOutputHandler::download(
     return out;
 }
 
-} // namespace ml
+} // namespace gdinfer

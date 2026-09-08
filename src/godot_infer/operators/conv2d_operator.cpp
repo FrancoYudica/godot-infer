@@ -4,12 +4,12 @@
 #include <godot_cpp/classes/rd_shader_spirv.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 bool Conv2DOperator::init(godot::RenderingDevice* rd) {
     const String path = "shaders/conv2d.glsl";
-    const String& shader_path = ml::Utils::get_project_relative_path(path);
-    _shader = ml::Utils::load_shader(rd, shader_path);
+    const String& shader_path = gdinfer::Utils::get_project_relative_path(path);
+    _shader = gdinfer::Utils::load_shader(rd, shader_path);
 
     ERR_FAIL_COND_V_MSG(
         !_shader.is_valid(),
@@ -20,8 +20,8 @@ bool Conv2DOperator::init(godot::RenderingDevice* rd) {
     return _shader.is_valid() && _pipeline.is_valid();
 }
 
-void ml::Conv2DOperator::dispatch(
-    const ml::Physical::Node& node,
+void gdinfer::Conv2DOperator::dispatch(
+    const gdinfer::Physical::Node& node,
     const OperatorContext& ctx) {
 
     // Resolve buffers
@@ -105,7 +105,7 @@ void ml::Conv2DOperator::dispatch(
         in_batch_size);
 }
 
-void ml::Conv2DOperator::destroy(godot::RenderingDevice* rd) {
+void gdinfer::Conv2DOperator::destroy(godot::RenderingDevice* rd) {
     if (_pipeline.is_valid()) {
         rd->free_rid(_pipeline);
     }
@@ -114,4 +114,4 @@ void ml::Conv2DOperator::destroy(godot::RenderingDevice* rd) {
     }
 }
 
-} // namespace ml
+} // namespace gdinfer

@@ -11,7 +11,7 @@ struct PushConstants {
     uint32_t _padding;
 };
 
-namespace ml {
+namespace gdinfer {
 
 bool TextureInputHandlerCompute::init(RenderingDevice* rd) {
     // Shader and pipeline creation
@@ -144,4 +144,4 @@ void TextureInputHandlerCompute::dispatch(const InputHandlerContext& ctx) {
     });
 }
 
-} // namespace ml
+} // namespace gdinfer

@@ -1,6 +1,6 @@
 #include "float_array_input_handler.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 bool FloatArrayInputHandler::upload(
     const std::unique_ptr<InputDesc::BaseData>& desc,
@@ -35,4 +35,4 @@ std::vector<int64_t> FloatArrayInputHandler::get_shape(
     return float_array_desc->shape;
 }
 
-} // namespace ml
+} // namespace gdinfer

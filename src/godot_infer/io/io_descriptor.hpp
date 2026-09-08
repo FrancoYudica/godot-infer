@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace ml {
+namespace gdinfer {
 
 enum class InputType {
     Texture2D,  // GPU texture -> storage buffer
@@ -35,8 +35,8 @@ class BaseData {
 class Texture : public BaseData {
   public:
     godot::Ref<godot::Texture2D> texture;
-    uint32_t channels = 3;   // number of output channels (derived from load_mode)
-    uint32_t load_mode = 0;  // LoadTextureMode cast to uint32_t, forwarded to shader
+    uint32_t channels = 3;  // number of output channels (derived from load_mode)
+    uint32_t load_mode = 0; // LoadTextureMode cast to uint32_t, forwarded to shader
     uint32_t process_width_override = 0;
     uint32_t process_height_override = 0;
 };
@@ -65,9 +65,9 @@ class Texture : public BaseData {
 } // namespace OutputDesc
 
 namespace Utils {
-    std::string input_handler_name(const InputType& type);
+std::string input_handler_name(const InputType& type);
 
-    std::string output_handler_name(const OutputType& type);
-}
+std::string output_handler_name(const OutputType& type);
+} // namespace Utils
 
-} // namespace ml
+} // namespace gdinfer

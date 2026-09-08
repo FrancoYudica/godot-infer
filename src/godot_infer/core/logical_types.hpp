@@ -1,7 +1,7 @@
 #pragma once
 #include "core_types.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 namespace Logical {
 
@@ -84,4 +84,4 @@ struct Graph {
 };
 
 } // namespace Logical
-} // namespace ml
+} // namespace gdinfer

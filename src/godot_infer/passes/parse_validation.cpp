@@ -1,6 +1,6 @@
 #include "parse_validation.hpp"
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 static OperationResult check_kernel_pads_strides_dilations(
     const std::string& ctx,
@@ -142,4 +142,4 @@ OperationResult validate_parse(const Logical::Graph& graph) {
     return OPERATION_OK;
 }
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

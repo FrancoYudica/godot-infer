@@ -1,7 +1,7 @@
 #pragma once
 #include "io/output_handler.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 class TextureOutputHandlerCompute : public IOutputHandler {
   public:
@@ -22,4 +22,4 @@ class TextureOutputHandlerCompute : public IOutputHandler {
     uint32_t _texture_width, _texture_height, _texture_channels;
 };
 
-} // namespace ml
+} // namespace gdinfer

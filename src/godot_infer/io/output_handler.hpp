@@ -5,7 +5,7 @@
 
 #include <godot_cpp/classes/rendering_device.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 struct OutputHandlerContext {
     godot::RenderingDevice* rd;
@@ -44,4 +44,4 @@ class IOutputHandler {
         Ref<TensorResourceManager> activations_tm) = 0;
 };
 
-} // namespace ml
+} // namespace gdinfer

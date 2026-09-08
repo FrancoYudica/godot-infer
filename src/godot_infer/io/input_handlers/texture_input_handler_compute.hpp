@@ -2,7 +2,7 @@
 #include "io/input_handler.hpp"
 #include "io/io_descriptor.hpp"
 
-namespace ml {
+namespace gdinfer {
 class TextureInputHandlerCompute : public IInputHandler {
   public:
     bool init(godot::RenderingDevice* rd) override;
@@ -26,4 +26,4 @@ class TextureInputHandlerCompute : public IInputHandler {
     uint32_t _load_mode = 0;
 };
 
-} // namespace ml
+} // namespace gdinfer

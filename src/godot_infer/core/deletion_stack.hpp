@@ -2,7 +2,7 @@
 #include <functional>
 #include <stack>
 
-namespace ml {
+namespace gdinfer {
 class DeletionStack {
   public:
     void push(std::function<void()> func) {
@@ -19,4 +19,4 @@ class DeletionStack {
   private:
     std::stack<std::function<void()>> _stack;
 };
-} // namespace ml
+} // namespace gdinfer

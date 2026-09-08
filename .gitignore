@@ -12,3 +12,4 @@ vcpkg_installed
 .prettierrc
 __pycache__
 build
+build-ide

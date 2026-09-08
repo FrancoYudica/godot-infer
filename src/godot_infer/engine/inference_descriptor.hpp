@@ -48,7 +48,7 @@ class InferenceDescriptor : public RefCounted {
      * to easily make sure that the user isn't defining more than one
      * input handler per tensor.
      */
-    std::unordered_map<std::string, std::unique_ptr<ml::InputDesc::BaseData>>
+    std::unordered_map<std::string, std::unique_ptr<gdinfer::InputDesc::BaseData>>
         inputs;
 
     /**
@@ -57,7 +57,7 @@ class InferenceDescriptor : public RefCounted {
      * For example, the case where the user wants to get the result as a
      * texture but also into a float array.
      */
-    std::unordered_map<std::string, std::unique_ptr<ml::OutputDesc::BaseData>>
+    std::unordered_map<std::string, std::unique_ptr<gdinfer::OutputDesc::BaseData>>
         outputs;
 };
 

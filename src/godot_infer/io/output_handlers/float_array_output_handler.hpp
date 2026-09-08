@@ -1,7 +1,7 @@
 #pragma once
 #include "io/output_handler.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 class FloatArrayOutputHandler : public IOutputHandler {
   public:
@@ -11,4 +11,4 @@ class FloatArrayOutputHandler : public IOutputHandler {
         Ref<TensorResourceManager> activations_tm) override;
 };
 
-} // namespace ml
+} // namespace gdinfer

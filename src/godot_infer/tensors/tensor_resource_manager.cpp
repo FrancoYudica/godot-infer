@@ -4,7 +4,7 @@
 
 using namespace godot;
 
-namespace ml {
+namespace gdinfer {
 
 void TensorResourceManager::init(
     RenderingDevice* rendering_device,
@@ -217,4 +217,4 @@ _TensorBuffer* TensorResourceManager::_resolve(
     return nullptr;
 }
 
-} // namespace ml
+} // namespace gdinfer

@@ -2,7 +2,7 @@
 #include "io/input_handler.hpp"
 #include "io/io_descriptor.hpp"
 
-namespace ml {
+namespace gdinfer {
 class FloatArrayInputHandler : public IInputHandler {
   public:
     bool upload(
@@ -12,4 +12,4 @@ class FloatArrayInputHandler : public IInputHandler {
     std::vector<int64_t> get_shape(const std::unique_ptr<InputDesc::BaseData>& desc) const override;
 };
 
-} // namespace ml
+} // namespace gdinfer

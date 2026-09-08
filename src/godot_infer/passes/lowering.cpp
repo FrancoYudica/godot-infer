@@ -1,6 +1,6 @@
 #include "lowering.hpp"
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 static OperationResult low_relu(const Logical::Node& node, Physical::Graph& graph) {
     Physical::Node n;
@@ -298,4 +298,4 @@ LoweringResult lower(const Logical::Graph& logical_graph) {
     return result;
 }
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

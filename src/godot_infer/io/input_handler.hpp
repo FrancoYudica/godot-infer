@@ -5,7 +5,7 @@
 
 #include <godot_cpp/classes/rendering_device.hpp>
 
-namespace ml {
+namespace gdinfer {
 
 struct InputHandlerContext {
     godot::RenderingDevice* rd;
@@ -39,4 +39,4 @@ class IInputHandler {
     }
 };
 
-} // namespace ml
+} // namespace gdinfer

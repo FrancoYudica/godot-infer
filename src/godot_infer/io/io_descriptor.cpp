@@ -1,6 +1,6 @@
 #include "io_descriptor.hpp"
 
-namespace ml::Utils {
+namespace gdinfer::Utils {
 std::string input_handler_name(const InputType& type) {
     switch (type) {
     case InputType::Texture2D:
@@ -19,4 +19,4 @@ std::string output_handler_name(const OutputType& type) {
     }
     return "UnknownOutputDesc";
 }
-} // namespace ml::Utils
+} // namespace gdinfer::Utils

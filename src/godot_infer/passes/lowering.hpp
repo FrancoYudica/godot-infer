@@ -1,7 +1,7 @@
 #pragma once
 #include "core/core.hpp" // IWYU pragma: export
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 struct LoweringResult {
     Physical::Graph graph;
@@ -10,4 +10,4 @@ struct LoweringResult {
 
 LoweringResult lower(const Logical::Graph& logical_graph);
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

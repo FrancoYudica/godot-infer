@@ -1,19 +1,19 @@
 #pragma once
 #include "input_handler.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 class InputHandlerRegistry {
   public:
     bool init(godot::RenderingDevice* rd);
 
-    const std::unique_ptr<ml::IInputHandler>& get(
-        const ml::InputType& desc) const;
+    const std::unique_ptr<gdinfer::IInputHandler>& get(
+        const gdinfer::InputType& desc) const;
     void destroy(godot::RenderingDevice* rd);
 
   private:
     template <typename T>
-    bool _register(ml::InputType type, godot::RenderingDevice* rd) {
+    bool _register(gdinfer::InputType type, godot::RenderingDevice* rd) {
         auto impl = std::make_unique<T>();
         if (impl->init(rd)) {
             _handlers[type] = std::move(impl);
@@ -21,8 +21,8 @@ class InputHandlerRegistry {
         }
         return false;
     }
-    std::unordered_map<ml::InputType, std::unique_ptr<ml::IInputHandler>>
+    std::unordered_map<gdinfer::InputType, std::unique_ptr<gdinfer::IInputHandler>>
         _handlers;
 };
 
-} // namespace ml
+} // namespace gdinfer

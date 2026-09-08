@@ -2,20 +2,20 @@
 
 #include <godot_cpp/classes/rendering_device.hpp>
 
-namespace ml {
+namespace gdinfer {
 class ReshapeOperator : public IOperator {
   public:
     virtual bool init(godot::RenderingDevice* rd) override;
     virtual void dispatch(
-        const ml::Physical::Node& node,
+        const gdinfer::Physical::Node& node,
         const OperatorContext& ctx) override;
     void destroy(godot::RenderingDevice* rd) override;
 
   private:
     void _dispatch_transpose(
-        const ml::Physical::Node& node,
+        const gdinfer::Physical::Node& node,
         const OperatorContext& ctx,
-        const ml::Physical::ReshapeAttrs& attrs);
+        const gdinfer::Physical::ReshapeAttrs& attrs);
 
     RID _shader;
     RID _pipeline;
@@ -27,4 +27,4 @@ class ReshapeOperator : public IOperator {
     };
 };
 
-} // namespace ml
+} // namespace gdinfer

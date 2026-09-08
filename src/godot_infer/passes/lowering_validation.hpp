@@ -1,7 +1,7 @@
 #pragma once
 #include "core/core.hpp" // IWYU pragma: export
 
-namespace ml::passes {
+namespace gdinfer::passes {
 
 /**
  * Validates a Physical::Graph after lowering.
@@ -12,4 +12,4 @@ namespace ml::passes {
  */
 OperationResult lowering_validation(const Physical::Graph& graph);
 
-} // namespace ml::passes
+} // namespace gdinfer::passes

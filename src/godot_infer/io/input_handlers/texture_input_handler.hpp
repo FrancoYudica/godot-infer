@@ -2,7 +2,7 @@
 #include "io/input_handler.hpp"
 #include "io/io_descriptor.hpp"
 
-namespace ml {
+namespace gdinfer {
 class TextureInputHandler : public IInputHandler {
   public:
     std::vector<int64_t> get_shape(const std::unique_ptr<InputDesc::BaseData>& desc) const override;
@@ -14,4 +14,4 @@ class TextureInputHandler : public IInputHandler {
     void dispatch(const InputHandlerContext& ctx) override;
 };
 
-} // namespace ml
+} // namespace gdinfer

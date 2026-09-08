@@ -4,7 +4,7 @@
 #include "input_handlers/texture_input_handler.hpp"
 #include "input_handlers/texture_input_handler_compute.hpp"
 
-namespace ml {
+namespace gdinfer {
 
 bool InputHandlerRegistry::init(godot::RenderingDevice* rd) {
     // Register all supported operators
@@ -20,8 +20,8 @@ bool InputHandlerRegistry::init(godot::RenderingDevice* rd) {
     return true;
 }
 
-const std::unique_ptr<ml::IInputHandler>& InputHandlerRegistry::get(
-    const ml::InputType& desc) const {
+const std::unique_ptr<gdinfer::IInputHandler>& InputHandlerRegistry::get(
+    const gdinfer::InputType& desc) const {
     return _handlers.at(desc);
 }
 
@@ -31,4 +31,4 @@ void InputHandlerRegistry::destroy(godot::RenderingDevice* rd) {
     }
 }
 
-} // namespace ml
+} // namespace gdinfer
