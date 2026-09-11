@@ -3,11 +3,15 @@
 # We deliberately do NOT add_subdirectory(thirdparty/onnx) and consume its own
 # CMakeLists.txt: that builds onnx's entire C++ library (defs, checker, shape
 # inference, optimizer...), requires a Python interpreter, and pins C++11.
-# We only use onnx's protobuf *messages* (godot_infer/passes/parser.cpp does
-# our own graph parsing), so this mirrors thirdparty/SCsub instead: invoke
-# protoc directly on the two .proto files we actually need.
-function(onnx_generate_protobuf_sources OUT_SOURCES)
-    set(_onnx_dir "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/onnx/onnx")
+# We only use onnx's protobuf *messages* (godot_infer/stages/compile/parser
+# does our own graph parsing), so this mirrors thirdparty/SCsub instead:
+# invoke protoc directly on the two .proto files we actually need.
+#
+# ONNX_DIR is passed in explicitly rather than derived from
+# CMAKE_CURRENT_SOURCE_DIR, which inside a function reflects the caller's
+# directory, not this file's.
+function(onnx_generate_protobuf_sources OUT_SOURCES ONNX_DIR)
+    set(_onnx_dir "${ONNX_DIR}")
 
     if(TARGET protobuf::protoc)
         set(_protoc protobuf::protoc)

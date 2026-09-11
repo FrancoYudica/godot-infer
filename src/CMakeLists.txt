@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24) # LINK_GROUP:RESCAN (see the Linux link_libraries call below)
+cmake_minimum_required(VERSION 3.24) # LINK_GROUP:RESCAN (see godot_infer/stages/compile/parser/CMakeLists.txt)
 
 # vcpkg.json lives at the project root, one level up from this file (src/).
 # These must be set before project() so vcpkg's toolchain file (passed via
@@ -49,35 +49,32 @@ add_subdirectory(thirdparty/godot-cpp)
 find_package(Protobuf CONFIG REQUIRED)
 
 include(cmake/onnx_protobuf.cmake)
-onnx_generate_protobuf_sources(GD_INFER_ONNX_SOURCES)
+
+# One static library per pipeline stage
+add_subdirectory(godot_infer/core)
+add_subdirectory(godot_infer/stages/compile/parser)
 
 file(GLOB_RECURSE GD_INFER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/godot_infer/*.cpp")
 
+# TEMP: These lines shouldn't exist once the migration is complete.
+list(FILTER GD_INFER_SOURCES EXCLUDE REGEX "/godot_infer/core/")
+list(FILTER GD_INFER_SOURCES EXCLUDE REGEX "/godot_infer/stages/")
 add_library(godot_infer SHARED
     register_types.cpp
     ${GD_INFER_SOURCES}
-    ${GD_INFER_ONNX_SOURCES}
 )
-
-target_compile_definitions(godot_infer PRIVATE ONNX_ML=0)
 
 target_include_directories(godot_infer PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/godot_infer"
-    "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/onnx"
-    "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/onnx/onnx"
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # vcpkg's static protobuf/abseil libs have circular inter-dependencies
-    # (abseil ships as dozens of small .a files). LINK_GROUP:RESCAN wraps the
-    # group in the linker's equivalent of -Wl,--start-group/--end-group,
-    # re-scanning until all symbols resolve regardless of link order --
-    # mirrors the equivalent SConstruct workaround.
-    target_link_libraries(godot_infer PRIVATE godot::cpp "$<LINK_GROUP:RESCAN,protobuf::libprotobuf>")
+    # LINK_GROUP:RESCAN for protobuf now lives in gdinfer_stage_parser's own CMakeLists.txt.
+    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser)
     target_link_options(godot_infer PRIVATE "LINKER:--no-undefined")
 else()
-    target_link_libraries(godot_infer PRIVATE godot::cpp protobuf::libprotobuf)
+    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser)
 endif()
 
 # Match godot-cpp's own suffix scheme so the .gdextension file's library
@@ -105,3 +102,11 @@ foreach(GD_INFER_CONFIG Debug Release RelWithDebInfo MinSizeRel)
         LIBRARY_OUTPUT_DIRECTORY_${GD_INFER_CONFIG_UPPER} "${GD_INFER_PROJECT_ROOT}/demo/addons/godot_infer/bin"
     )
 endforeach()
+
+# Opt-in GoogleTest suite
+option(BUILD_TESTS "Build the cpp_tests/ GoogleTest suite" OFF)
+
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory("${GD_INFER_PROJECT_ROOT}/cpp_tests" "${CMAKE_CURRENT_BINARY_DIR}/cpp_tests")
+endif()
