@@ -70,10 +70,14 @@ jobs:
                     -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
                     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
                     -DVCPKG_TARGET_TRIPLET=x64-linux \
-                    -DGODOTCPP_TARGET=template_debug
+                    -DGODOTCPP_TARGET=template_debug \
+                    -DBUILD_TESTS=ON
 
             - name: Build GDExtension
               run: cmake --build build -j$(nproc)
+
+            - name: Run C++ unit tests (ctest)
+              run: ctest --test-dir build --output-on-failure
 
             - name: Lint (clang-tidy)
               continue-on-error: true
