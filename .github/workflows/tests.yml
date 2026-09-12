@@ -41,7 +41,7 @@ jobs:
 
             - name: Bootstrap vcpkg
               run: |
-                  git clone --depth 1 --branch "${VCPKG_REF}" https://github.com/microsoft/vcpkg.git /tmp/vcpkg
+                  git clone --branch "${VCPKG_REF}" https://github.com/microsoft/vcpkg.git /tmp/vcpkg
                   /tmp/vcpkg/bootstrap-vcpkg.sh
                   echo "VCPKG_ROOT=/tmp/vcpkg" >> "$GITHUB_ENV"
 
