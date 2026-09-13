@@ -50,6 +50,13 @@ find_package(Protobuf CONFIG REQUIRED)
 
 include(cmake/onnx_protobuf.cmake)
 
+# Every godot_infer/** module below is a STATIC library that ends up linked
+# into the SHARED godot_infer target. On ELF platforms a static library not
+# built with -fPIC can fail at that final link step (e.g. TLS relocations
+# like R_X86_64_TPOFF32 from protobuf's headers) even though it links fine
+# on its own -- ignored on Windows, which has no such distinction.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # One static library per pipeline stage
 add_subdirectory(godot_infer/core)
 add_subdirectory(godot_infer/stages/compile/parser)
