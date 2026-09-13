@@ -2,12 +2,11 @@
 
 #include "node_parser.hpp"
 #include "onnx/onnx_pb.h"
+#include "parse_validation.hpp"
 
 #include <cstring>
 
-namespace gdinfer {
-
-namespace Logical {
+namespace gdinfer::compile::parser {
 namespace {
 
 void _parse_inputs(const onnx::GraphProto& proto, Graph& graph) {
@@ -92,25 +91,24 @@ OperationResult _parse_initializers(const onnx::GraphProto& proto, Graph& graph)
     return OPERATION_OK;
 }
 
-} // namespace
-
-} // namespace Logical
-namespace passes {
-namespace {
-
 ParseResult _parse_model(onnx::ModelProto& model) {
     const onnx::GraphProto& proto = model.graph();
-    Logical::Graph graph;
-    Logical::_parse_inputs(proto, graph);
+    Graph graph;
+    _parse_inputs(proto, graph);
 
-    auto initializers_result = Logical::_parse_initializers(proto, graph);
+    auto initializers_result = _parse_initializers(proto, graph);
     if (!initializers_result.success) {
         return {.graph = {}, .status = initializers_result};
     }
 
-    auto nodes_result = Logical::parse_nodes(proto, graph);
+    auto nodes_result = parse_nodes(proto, graph);
     if (!nodes_result.success) {
         return {.graph = {}, .status = nodes_result};
+    }
+
+    auto validation_result = validate_parse(graph);
+    if (!validation_result.success) {
+        return {.graph = {}, .status = validation_result};
     }
 
     return {.graph = std::move(graph), .status = OPERATION_OK};
@@ -126,6 +124,4 @@ ParseResult parse(const uint8_t* data, size_t size) {
 
     return _parse_model(model);
 }
-
-} // namespace passes
-} // namespace gdinfer
+} // namespace gdinfer::compile::parser

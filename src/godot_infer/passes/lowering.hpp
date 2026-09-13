@@ -1,5 +1,6 @@
 #pragma once
-#include "core/core.hpp" // IWYU pragma: export
+#include "core/core.hpp"                    // IWYU pragma: export
+#include "stages/compile/parser/types.hpp"  // IWYU pragma: export
 
 namespace gdinfer::passes {
 
@@ -8,6 +9,6 @@ struct LoweringResult {
     OperationResult status;
 };
 
-LoweringResult lower(const Logical::Graph& logical_graph);
+LoweringResult lower(const compile::parser::Graph& graph);
 
 } // namespace gdinfer::passes

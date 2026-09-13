@@ -40,27 +40,6 @@ std::string op_name(Physical::Operator op) {
     }
 }
 
-std::string op_name(Logical::Operator op) {
-    switch (op) {
-    case Logical::Operator::Gemm:
-        return "Gemm";
-    case Logical::Operator::ReLU:
-        return "ReLU";
-    case Logical::Operator::Sigmoid:
-        return "Sigmoid";
-    case Logical::Operator::Conv:
-        return "Conv";
-    case Logical::Operator::Im2Col:
-        return "Im2Col";
-    case Logical::Operator::ConvTranspose:
-        return "ConvTranspose";
-    case Logical::Operator::MaxPool2D:
-        return "MaxPool2D";
-    default:
-        return "Unknown";
-    }
-}
-
 RID load_shader(RenderingDevice* rd, const godot::String& path) {
     Ref<RDShaderFile> shader_file =
         ResourceLoader::get_singleton()->load(path);

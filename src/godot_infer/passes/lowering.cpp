@@ -2,7 +2,7 @@
 
 namespace gdinfer::passes {
 
-static OperationResult low_relu(const Logical::Node& node, Physical::Graph& graph) {
+static OperationResult low_relu(const compile::parser::Node& node, Physical::Graph& graph) {
     Physical::Node n;
     n.inputs = node.inputs;
     n.outputs = node.outputs;
@@ -11,7 +11,7 @@ static OperationResult low_relu(const Logical::Node& node, Physical::Graph& grap
     return {true, {}};
 }
 
-static OperationResult low_sigmoid(const Logical::Node& node, Physical::Graph& graph) {
+static OperationResult low_sigmoid(const compile::parser::Node& node, Physical::Graph& graph) {
     Physical::Node n;
     n.inputs = node.inputs;
     n.outputs = node.outputs;
@@ -20,8 +20,8 @@ static OperationResult low_sigmoid(const Logical::Node& node, Physical::Graph& g
     return {true, {}};
 }
 
-static OperationResult low_gemm(const Logical::Node& node, Physical::Graph& graph) {
-    const auto& l_attrs = std::get<Logical::GemmAttrs>(node.attributes);
+static OperationResult low_gemm(const compile::parser::Node& node, Physical::Graph& graph) {
+    const auto& l_attrs = std::get<compile::parser::GemmAttrs>(node.attributes);
 
     Physical::Node n;
     n.inputs = node.inputs;
@@ -37,8 +37,8 @@ static OperationResult low_gemm(const Logical::Node& node, Physical::Graph& grap
     return {true, {}};
 }
 
-static OperationResult low_conv(const Logical::Node& node, Physical::Graph& graph) {
-    const auto& l_attrs = std::get<Logical::ConvAttrs>(node.attributes);
+static OperationResult low_conv(const compile::parser::Node& node, Physical::Graph& graph) {
+    const auto& l_attrs = std::get<compile::parser::ConvAttrs>(node.attributes);
 
     const std::string col_name = node.outputs[0] + "__col";
     // GEMM writes [OH*OW, OC]; the permutation reshape below transposes to [OC, OH*OW] (BCHW).
@@ -88,8 +88,8 @@ static OperationResult low_conv(const Logical::Node& node, Physical::Graph& grap
     return {true, {}};
 }
 
-static OperationResult low_im2col(const Logical::Node& node, Physical::Graph& graph) {
-    const auto& l_attrs = std::get<Logical::ConvAttrs>(node.attributes);
+static OperationResult low_im2col(const compile::parser::Node& node, Physical::Graph& graph) {
+    const auto& l_attrs = std::get<compile::parser::ConvAttrs>(node.attributes);
 
     Physical::Node n;
     n.inputs = {node.inputs[0]};
@@ -112,8 +112,8 @@ static OperationResult low_im2col(const Logical::Node& node, Physical::Graph& gr
     return {true, {}};
 }
 
-static OperationResult low_conv_transpose(const Logical::Node& node, Physical::Graph& graph) {
-    const auto& l_attrs = std::get<Logical::ConvTransposeAttrs>(node.attributes);
+static OperationResult low_conv_transpose(const compile::parser::Node& node, Physical::Graph& graph) {
+    const auto& l_attrs = std::get<compile::parser::ConvTransposeAttrs>(node.attributes);
 
     const std::string flat_name = node.inputs[0] + "__flat";
     const std::string gemm_name = node.outputs[0] + "__gemm";
@@ -202,7 +202,7 @@ static OperationResult low_conv_transpose(const Logical::Node& node, Physical::G
     return {true, {}};
 }
 
-static OperationResult low_reshape(const Logical::Node& node, Physical::Graph& graph) {
+static OperationResult low_reshape(const compile::parser::Node& node, Physical::Graph& graph) {
     auto it = graph.initializers.find(node.inputs[1]);
     if (it == graph.initializers.end())
         return {false, "Reshape: shape tensor '" + node.inputs[1] + "' not found in initializers"};
@@ -223,8 +223,8 @@ static OperationResult low_reshape(const Logical::Node& node, Physical::Graph& g
     return {true, {}};
 }
 
-static OperationResult low_max_pool_2d(const Logical::Node& node, Physical::Graph& graph) {
-    const auto& l_attrs = std::get<Logical::MaxPool2DAttrs>(node.attributes);
+static OperationResult low_max_pool_2d(const compile::parser::Node& node, Physical::Graph& graph) {
+    const auto& l_attrs = std::get<compile::parser::MaxPool2DAttrs>(node.attributes);
 
     Physical::Node max_pool;
     max_pool.op = Physical::Operator::MaxPool2D;
@@ -247,7 +247,7 @@ static OperationResult low_max_pool_2d(const Logical::Node& node, Physical::Grap
     return {true, {}};
 }
 
-LoweringResult lower(const Logical::Graph& logical_graph) {
+LoweringResult lower(const compile::parser::Graph& logical_graph) {
     LoweringResult result;
     result.status = {true, {}};
     auto& graph = result.graph;
@@ -260,31 +260,31 @@ LoweringResult lower(const Logical::Graph& logical_graph) {
         OperationResult op_result;
 
         switch (node.op) {
-        case Logical::Operator::ReLU:
+        case compile::parser::Operator::ReLU:
             op_result = low_relu(node, graph);
             break;
-        case Logical::Operator::Sigmoid:
+        case compile::parser::Operator::Sigmoid:
             op_result = low_sigmoid(node, graph);
             break;
-        case Logical::Operator::Gemm:
+        case compile::parser::Operator::Gemm:
             op_result = low_gemm(node, graph);
             break;
-        case Logical::Operator::Conv:
+        case compile::parser::Operator::Conv:
             op_result = low_conv(node, graph);
             break;
-        case Logical::Operator::Im2Col:
+        case compile::parser::Operator::Im2Col:
             op_result = low_im2col(node, graph);
             break;
-        case Logical::Operator::ConvTranspose:
+        case compile::parser::Operator::ConvTranspose:
             op_result = low_conv_transpose(node, graph);
             break;
-        case Logical::Operator::MaxPool2D:
+        case compile::parser::Operator::MaxPool2D:
             op_result = low_max_pool_2d(node, graph);
             break;
-        case Logical::Operator::Reshape:
+        case compile::parser::Operator::Reshape:
             op_result = low_reshape(node, graph);
             break;
-        case Logical::Operator::Unknown:
+        case compile::parser::Operator::Unknown:
             result.status = {false, "lowering: encountered unknown op"};
             return result;
         }

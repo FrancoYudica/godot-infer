@@ -6,7 +6,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <string_view>
 
-namespace gdinfer::Logical {
+namespace gdinfer::compile::parser {
 namespace {
 
 const std::unordered_map<std::string, Operator> operator_names = {
@@ -222,4 +222,4 @@ OperationResult parse_nodes(const onnx::GraphProto& proto, Graph& graph) {
     return OPERATION_OK;
 }
 
-} // namespace gdinfer::Logical
+} // namespace gdinfer::compile::parser

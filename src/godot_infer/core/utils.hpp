@@ -1,5 +1,4 @@
 #pragma once
-#include "logical_types.hpp"
 #include "physical_types.hpp"
 
 #include <godot_cpp/classes/rendering_device.hpp>
@@ -13,8 +12,6 @@ namespace Utils {
 godot::String get_project_relative_path(const godot::String& path);
 
 std::string op_name(Physical::Operator op);
-
-std::string op_name(Logical::Operator op);
 
 godot::RID load_shader(godot::RenderingDevice* rd, const godot::String& path);
 

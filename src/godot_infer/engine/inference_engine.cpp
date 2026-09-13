@@ -97,17 +97,11 @@ uint32_t MLInferenceEngine::register_model(Ref<ONNXResource> resource) {
     ERR_FAIL_COND_V_MSG(resource.is_null(), 0, "InferenceEngine: null ONNXResource.");
 
     const PackedByteArray data = resource->get_data();
-    auto parse_result = gdinfer::passes::parse(data.ptr(), data.size());
+    auto parse_result = gdinfer::compile::parser::parse(data.ptr(), data.size());
     ERR_FAIL_COND_V_MSG(
         !parse_result.status.success,
         0,
         ("InferenceEngine: parse failed: " + parse_result.status.error).c_str());
-
-    auto logical_validation_result = gdinfer::passes::validate_parse(parse_result.graph);
-    ERR_FAIL_COND_V_MSG(
-        !logical_validation_result.success,
-        0,
-        ("InferenceEngine: logical graph validation failed: " + logical_validation_result.error).c_str());
 
     auto lower_result = gdinfer::passes::lower(parse_result.graph);
     ERR_FAIL_COND_V_MSG(

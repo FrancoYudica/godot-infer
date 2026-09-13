@@ -1,16 +1,16 @@
 #pragma once
 #include "core/core.hpp" // IWYU pragma: export
+#include "types.hpp"
 
 #include <cstdint>
 
-
-namespace gdinfer::passes {
+namespace gdinfer::compile::parser {
 
 struct ParseResult {
-    Logical::Graph graph;
+    Graph graph;
     OperationResult status;
 };
 
 ParseResult parse(const uint8_t* data, size_t size);
 
-} // namespace gdinfer::passes
+} // namespace gdinfer::compile::parser

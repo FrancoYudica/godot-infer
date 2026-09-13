@@ -1,0 +1,76 @@
+#pragma once
+#include "core/core_types.hpp"
+
+namespace gdinfer::compile::parser {
+
+enum class Operator : uint8_t {
+    Gemm,
+    ReLU,
+    Sigmoid,
+    Conv,
+    Im2Col,
+    ConvTranspose,
+    MaxPool2D,
+    Reshape,
+    Unknown
+};
+
+struct GemmAttrs {
+    float alpha = 1.0F;
+    float beta = 1.0F;
+    bool transB = false;
+};
+
+struct ConvAttrs {
+    std::vector<int64_t> kernel_shape;
+    std::vector<int64_t> pads;
+    std::vector<int64_t> strides;
+    std::vector<int64_t> dilations;
+};
+
+struct Col2ImAttrs {
+    std::vector<int64_t> kernel_shape;
+    std::vector<int64_t> pads;
+    std::vector<int64_t> strides;
+    std::vector<int64_t> output_padding;
+    std::vector<int64_t> dilations;
+};
+
+struct ConvTransposeAttrs {
+    std::vector<int64_t> kernel_shape;
+    std::vector<int64_t> pads;
+    std::vector<int64_t> strides;
+    std::vector<int64_t> output_padding;
+    std::vector<int64_t> dilations;
+};
+
+struct MaxPool2DAttrs {
+    std::vector<int64_t> kernel_shape;
+    std::vector<int64_t> pads;
+    std::vector<int64_t> strides;
+    std::vector<int64_t> dilations;
+};
+
+// LOGICAL NODE AND GRAPH. MAPS ONNX FORMAT 1:1
+
+struct Node {
+    Operator op;
+    std::vector<std::string> inputs;
+    std::vector<std::string> outputs;
+    std::variant<
+        std::monostate,
+        GemmAttrs,
+        ConvAttrs,
+        ConvTransposeAttrs,
+        MaxPool2DAttrs>
+        attributes;
+};
+
+struct Graph {
+    std::vector<std::string> input_names;
+    std::unordered_map<std::string, std::vector<int64_t>> input_shapes;
+    std::vector<Node> nodes;
+    std::unordered_map<std::string, Tensor> initializers;
+};
+
+} // namespace gdinfer::compile::parser

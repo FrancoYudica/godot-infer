@@ -1,4 +1,4 @@
-# gdinfer_stage_parser: parses ONNX protobuf bytes into Logical::Graph.
+# gdinfer_stage_parser: parses ONNX protobuf bytes into Graph.
 # parser.hpp is the only public entry point; node_parser.hpp/.cpp are
 # private, used only by parser.cpp. Only module that touches onnx:: types,
 # so the generated protobuf sources, onnx include dirs, and protobuf link
