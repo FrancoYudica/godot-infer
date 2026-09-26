@@ -1,6 +1,5 @@
 CompileFlags:
-  Remove: [-fno-gnu-unique]
-  CompilationDatabase: build-ide
+  CompilationDatabase: build/windows-msvc-debug
 
 InlayHints:
   Designators: true

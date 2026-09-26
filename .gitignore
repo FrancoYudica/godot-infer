@@ -1,7 +1,15 @@
-.vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
 .vs
 *.os
 *.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+~*
 .sconsign.dblite
 config.log
 .sconf_temp
@@ -13,3 +21,4 @@ vcpkg_installed
 __pycache__
 build
 build-ide
+CMakeUserPresets.json

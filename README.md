@@ -38,4 +38,3 @@ This is an inference engine, not a training framework. It is built on Godot's `R
 ## Documentation
 
 - [Building from source](docs/building.md)
-- [Development setup](docs/development.md)

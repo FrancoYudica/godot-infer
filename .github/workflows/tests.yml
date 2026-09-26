@@ -62,26 +62,24 @@ jobs:
                   restore-keys: ccache-linux-
 
             - name: Configure CMake
+              working-directory: src
               run: |
-                  cmake -S src -B build -G Ninja \
-                    -DCMAKE_BUILD_TYPE=Debug \
-                    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+                  cmake --preset linux-clang-debug \
                     -DCMAKE_C_COMPILER_LAUNCHER=ccache \
                     -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
-                    -DVCPKG_TARGET_TRIPLET=x64-linux \
-                    -DGODOTCPP_TARGET=template_debug \
                     -DBUILD_TESTS=ON
 
             - name: Build GDExtension
-              run: cmake --build build -j$(nproc)
+              working-directory: src
+              run: cmake --build --preset linux-clang-debug -j$(nproc)
 
             - name: Run C++ unit tests (ctest)
-              run: ctest --test-dir build --output-on-failure
+              working-directory: src
+              run: ctest --preset linux-clang-debug --output-on-failure
 
             - name: Lint (clang-tidy)
               continue-on-error: true
-              run: find src/godot_infer -name '*.cpp' -print0 | xargs -0 clang-tidy -p build
+              run: find src/godot_infer -name '*.cpp' -print0 | xargs -0 clang-tidy -p build/linux-clang-debug
 
             - name: Import project
               run: xvfb-run --auto-servernum godot --headless --path demo/ --editor --quit 2>&1 || true
