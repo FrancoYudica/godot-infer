@@ -27,6 +27,13 @@
       }
     },
     {
+      "name": "windows-msvc-debug-tests",
+      "displayName": "Windows (cl.exe, Debug, with tests)",
+      "inherits": "windows-msvc-debug",
+      "binaryDir": "${sourceDir}/../build/windows-msvc-debug-tests",
+      "cacheVariables": { "BUILD_TESTS": "ON" }
+    },
+    {
       "name": "windows-msvc-release",
       "displayName": "Windows (cl.exe, Release / shipping export)",
       "inherits": "windows-msvc-debug",
@@ -35,6 +42,13 @@
         "CMAKE_BUILD_TYPE": "Release",
         "GODOTCPP_TARGET": "template_release"
       }
+    },
+    {
+      "name": "windows-msvc-release-tests",
+      "displayName": "Windows (cl.exe, Release, with tests)",
+      "inherits": "windows-msvc-release",
+      "binaryDir": "${sourceDir}/../build/windows-msvc-release-tests",
+      "cacheVariables": { "BUILD_TESTS": "ON" }
     },
     {
       "name": "linux-clang-debug",
@@ -51,21 +65,41 @@
       }
     },
     {
+      "name": "linux-clang-debug-tests",
+      "displayName": "Linux (clang, Debug, with tests)",
+      "inherits": "linux-clang-debug",
+      "binaryDir": "${sourceDir}/../build/linux-clang-debug-tests",
+      "cacheVariables": { "BUILD_TESTS": "ON" }
+    },
+    {
       "name": "linux-clang-release",
       "displayName": "Linux (clang, Release)",
       "inherits": "linux-clang-debug",
       "binaryDir": "${sourceDir}/../build/linux-clang-release",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "linux-clang-release-tests",
+      "displayName": "Linux (clang, Release, with tests)",
+      "inherits": "linux-clang-release",
+      "binaryDir": "${sourceDir}/../build/linux-clang-release-tests",
+      "cacheVariables": { "BUILD_TESTS": "ON" }
     }
   ],
   "buildPresets": [
     { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug" },
+    { "name": "windows-msvc-debug-tests", "configurePreset": "windows-msvc-debug-tests" },
     { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release" },
+    { "name": "windows-msvc-release-tests", "configurePreset": "windows-msvc-release-tests" },
     { "name": "linux-clang-debug", "configurePreset": "linux-clang-debug" },
-    { "name": "linux-clang-release", "configurePreset": "linux-clang-release" }
+    { "name": "linux-clang-debug-tests", "configurePreset": "linux-clang-debug-tests" },
+    { "name": "linux-clang-release", "configurePreset": "linux-clang-release" },
+    { "name": "linux-clang-release-tests", "configurePreset": "linux-clang-release-tests" }
   ],
   "testPresets": [
-    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug", "output": { "outputOnFailure": true } },
-    { "name": "linux-clang-debug", "configurePreset": "linux-clang-debug", "output": { "outputOnFailure": true } }
+    { "name": "windows-msvc-debug-tests", "configurePreset": "windows-msvc-debug-tests", "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-release-tests", "configurePreset": "windows-msvc-release-tests", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-debug-tests", "configurePreset": "linux-clang-debug-tests", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-release-tests", "configurePreset": "linux-clang-release-tests", "output": { "outputOnFailure": true } }
   ]
 }

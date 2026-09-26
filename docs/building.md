@@ -87,12 +87,12 @@ The extension is written to `demo/addons/godot_infer/bin/`.
 
 ### Running the C++ unit test suite
 
-Presets default to `BUILD_TESTS=OFF`. Append an override the same way you would any other `-D` flag:
+Each build preset has a `-tests` counterpart that additionally enables `BUILD_TESTS`:
 
 ```powershell
-cmake --preset windows-msvc-debug -DBUILD_TESTS=ON
-cmake --build --preset windows-msvc-debug
-ctest --preset windows-msvc-debug
+cmake --preset windows-msvc-debug-tests
+cmake --build --preset windows-msvc-debug-tests
+ctest --preset windows-msvc-debug-tests
 ```
 
 Notes:

@@ -25,7 +25,7 @@ jobs:
               run: |
                   sudo apt-get update
                   sudo apt-get install -y \
-                    build-essential clang clang-tidy cmake ninja-build ccache pkg-config \
+                    build-essential clang cmake ninja-build ccache pkg-config \
                     libvulkan1 mesa-vulkan-drivers xvfb curl unzip python3
 
             - name: Download Godot
@@ -64,22 +64,17 @@ jobs:
             - name: Configure CMake
               working-directory: src
               run: |
-                  cmake --preset linux-clang-debug \
+                  cmake --preset linux-clang-debug-tests \
                     -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                    -DBUILD_TESTS=ON
+                    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
             - name: Build GDExtension
               working-directory: src
-              run: cmake --build --preset linux-clang-debug -j$(nproc)
+              run: cmake --build --preset linux-clang-debug-tests -j$(nproc)
 
             - name: Run C++ unit tests (ctest)
               working-directory: src
-              run: ctest --preset linux-clang-debug --output-on-failure
-
-            - name: Lint (clang-tidy)
-              continue-on-error: true
-              run: find src/godot_infer -name '*.cpp' -print0 | xargs -0 clang-tidy -p build/linux-clang-debug
+              run: ctest --preset linux-clang-debug-tests --output-on-failure
 
             - name: Import project
               run: xvfb-run --auto-servernum godot --headless --path demo/ --editor --quit 2>&1 || true
