@@ -60,6 +60,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # One static library per pipeline stage
 add_subdirectory(godot_infer/core)
 add_subdirectory(godot_infer/stages/compile/parser)
+add_subdirectory(godot_infer/stages/compile/lowering)
 
 file(GLOB_RECURSE GD_INFER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/godot_infer/*.cpp")
 
@@ -78,10 +79,10 @@ target_include_directories(godot_infer PRIVATE
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # LINK_GROUP:RESCAN for protobuf now lives in gdinfer_stage_parser's own CMakeLists.txt.
-    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser)
+    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser gdinfer::stage_lowering)
     target_link_options(godot_infer PRIVATE "LINKER:--no-undefined")
 else()
-    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser)
+    target_link_libraries(godot_infer PRIVATE godot::cpp gdinfer::stage_parser gdinfer::stage_lowering)
 endif()
 
 # Match godot-cpp's own suffix scheme so the .gdextension file's library
