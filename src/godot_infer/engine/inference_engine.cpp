@@ -117,6 +117,7 @@ uint32_t MLInferenceEngine::register_model(Ref<ONNXResource> resource) {
 
     GraphContext graph_context;
     graph_context.graph = std::move(lower_result.graph);
+    graph_context.source_ops = std::move(lower_result.source_ops);
     graph_context.initializers_tm.instantiate();
     graph_context.initializers_tm->init(_rd, &_sb_pool);
 
@@ -247,6 +248,7 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     ERR_FAIL_COND_MSG(it == _graphs.end(), "InferenceEngine: graph not found.");
 
     const gdinfer::Physical::Graph& graph = it->second.graph;
+    const gdinfer::passes::SourceOpTable& source_ops = it->second.source_ops;
     Ref<gdinfer::TensorResourceManager> initializers_tm = it->second.initializers_tm;
 
     // 1. Collect input shapes from the descriptor
@@ -262,7 +264,7 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     }
 
     // 2. Shape inference - forward pass to compute all intermediate tensor shapes.
-    auto infer_result = gdinfer::passes::infer_shapes(graph, input_shapes);
+    auto infer_result = gdinfer::passes::infer_shapes(graph, source_ops, input_shapes);
     ERR_FAIL_COND_MSG(
         !infer_result.status.success,
         ("MLInferenceEngine: shape inference failed: " + infer_result.status.error).c_str());
@@ -296,13 +298,15 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
 
     _rd->compute_list_add_barrier(compute_list);
 
-    uint32_t node_index = 0;
-    for (const gdinfer::Physical::Node& node : graph.nodes) {
-        _run_node(node, compute_list, initializers_tm, task->activations_tm, shape_table);
+    for (size_t node_index = 0; node_index < graph.nodes.size(); ++node_index) {
+        const gdinfer::Physical::Node& node = graph.nodes[node_index];
+        _run_node(
+            graph, source_ops, infer_result.dispatch_data[node_index], node,
+            compute_list, initializers_tm, task->activations_tm, shape_table);
         _rd->compute_list_add_barrier(compute_list);
         _capture_timestamp(
             String::num(task->task_id) + ":" +
-            String::num(node_index++) + "_" + gdinfer::Utils::op_name(node.op).c_str());
+            String::num(static_cast<uint32_t>(node_index)) + "_" + gdinfer::Utils::op_name(node.op).c_str());
     }
 
     gdinfer::OutputHandlerContext out_ctx = {
@@ -335,11 +339,8 @@ void MLInferenceEngine::_allocate_activations(
     Ref<gdinfer::TensorResourceManager> activations_tm) {
 
     for (const auto& node : graph.nodes) {
-        // Non-permutation Reshape nodes create zero-copy aliases, not real GPU buffers.
-        if (node.op == gdinfer::Physical::Operator::Reshape) {
-            const auto& attrs = std::get<gdinfer::Physical::ReshapeAttrs>(node.attributes);
-            if (!attrs.is_permutation) continue;
-        }
+        // Reshape nodes always create zero-copy aliases, never real GPU buffers.
+        if (node.op == gdinfer::Physical::Operator::Reshape) continue;
         for (const auto& name : node.outputs) {
             auto it = shape_table.find(name);
             if (it != shape_table.end()) {
@@ -350,6 +351,9 @@ void MLInferenceEngine::_allocate_activations(
 }
 
 void MLInferenceEngine::_run_node(
+    const gdinfer::Physical::Graph& graph,
+    const gdinfer::passes::SourceOpTable& source_ops,
+    const gdinfer::passes::DispatchData& dispatch_data,
     const gdinfer::Physical::Node& node,
     int64_t compute_list,
     Ref<gdinfer::TensorResourceManager> initializers_tm,
@@ -365,7 +369,10 @@ void MLInferenceEngine::_run_node(
         .activations_tm = activations_tm,
         .compute_list = compute_list,
         .frame_deletion_stack = &_frame_deletion_stack,
-        .shape_table = &shape_table};
+        .shape_table = &shape_table,
+        .graph = &graph,
+        .source_ops = &source_ops,
+        .dispatch_data = &dispatch_data};
 
     op->dispatch(node, ctx);
 }

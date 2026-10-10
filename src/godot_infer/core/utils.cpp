@@ -33,6 +33,8 @@ std::string op_name(Physical::Operator op) {
         return "Col2Im";
     case Physical::Operator::Reshape:
         return "Reshape";
+    case Physical::Operator::MatrixTranspose:
+        return "MatrixTranspose";
     case Physical::Operator::MaxPool2D:
         return "MaxPool2D";
     default:

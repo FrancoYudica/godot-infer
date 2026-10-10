@@ -5,6 +5,7 @@
 #include "operators/element_wise_operator.hpp"
 #include "operators/gemm_operator.hpp"
 #include "operators/im2col_operator.hpp"
+#include "operators/matrix_transpose_operator.hpp"
 #include "operators/max_pool_2d_operator.hpp"
 #include "operators/reshape_operator.hpp"
 
@@ -35,6 +36,10 @@ bool OperatorRegistry::init(godot::RenderingDevice* rd) {
         !_register<ReshapeOperator>(Physical::Operator::Reshape, rd),
         false,
         "OperatorRegistry: failed to register Reshape operator.");
+    ERR_FAIL_COND_V_MSG(
+        !_register<MatrixTransposeOperator>(Physical::Operator::MatrixTranspose, rd),
+        false,
+        "OperatorRegistry: failed to register MatrixTranspose operator.");
     ERR_FAIL_COND_V_MSG(
         !_register<Col2ImOperator>(Physical::Operator::Col2Im, rd),
         false,

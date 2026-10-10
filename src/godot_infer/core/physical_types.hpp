@@ -14,6 +14,7 @@ enum class Operator {
     Col2Im,
     MaxPool2D,
     Reshape,
+    MatrixTranspose,
     Unknown
 };
 
@@ -48,7 +49,6 @@ struct Col2ImAttrs {
     uint32_t dilation_x;
     uint32_t output_padding_y;
     uint32_t output_padding_x;
-    std::string source_activation;
 };
 
 struct MaxPool2DAttrs {
@@ -64,28 +64,9 @@ struct MaxPool2DAttrs {
     uint32_t dilation_x;
 };
 
-enum class ReshapeMode {
-    // Flattens [b, c, h, w] -> [b*h*w, c]  (before Gemm in ConvTranspose)
-    ImageToGemm,
-    // Restores [b*h*w, oc] -> [b, oc, oh, ow]  (after Col2Im / after GEMM in Conv)
-    // Reads the 4D target shape from ShapeTable using image_shape_ref.
-    GemmToImage,
-    // Standard ONNX Reshape: explicit target_shape from the shape initializer.
-    // -1 dimensions are resolved at shape inference time.
-    Standard,
-};
-
+// Reshape is always a zero-copy alias (no data movement); actual data-moving transposes are
+// Physical::Operator::MatrixTranspose nodes instead. May be empty if resolved later by shape inference.
 struct ReshapeAttrs {
-    ReshapeMode mode;
-    // For GemmToImage: key in ShapeTable that holds the target [b, c, h, w].
-    // Written by Im2Col (Conv path) or Col2Im (ConvTranspose path) during shape inference.
-    // Format: <producer_output_name> + "__4d"
-    std::string image_shape_ref;
-    // When true: dispatches matrix_transpose.glsl instead of creating a zero-copy alias.
-    // Used for BCHW bridge nodes around GEMM in Conv (post-GEMM) and ConvTranspose (pre-GEMM).
-    bool is_permutation = false;
-    // For Standard mode: target dimensions read from the ONNX shape initializer.
-    // May contain -1 (infer) or 0 (copy from input dim).
     std::vector<int64_t> target_shape;
 };
 
@@ -93,6 +74,9 @@ struct Node {
     Operator op;
     std::vector<std::string> inputs;
     std::vector<std::string> outputs;
+    // Index into the LoweringResult::source_ops table (stages/compile/lowering/lowering.hpp)
+    // this node was produced from. Meaningful only for graphs produced by lower().
+    size_t source_op = 0;
 
     std::variant<
         std::monostate,

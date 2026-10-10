@@ -6,6 +6,7 @@
 #include "io/io.hpp"
 #include "io/onnx_resource.hpp"
 #include "operators/operators.hpp"
+#include "stages/compile/lowering/lowering.hpp"
 #include "stages/compile/parser/parser.hpp"
 #include "tensors/tensors.hpp"
 
@@ -18,6 +19,7 @@ namespace godot {
 
 struct GraphContext {
     gdinfer::Physical::Graph graph;
+    gdinfer::passes::SourceOpTable source_ops;
     Ref<gdinfer::TensorResourceManager> initializers_tm;
 };
 
@@ -48,6 +50,9 @@ class MLInferenceEngine : public RefCounted {
     void _process_pending_tasks();
     void _process_task(Ref<InferenceTask> task);
     void _run_node(
+        const gdinfer::Physical::Graph& graph,
+        const gdinfer::passes::SourceOpTable& source_ops,
+        const gdinfer::passes::DispatchData& dispatch_data,
         const gdinfer::Physical::Node& node,
         int64_t compute_list,
         Ref<gdinfer::TensorResourceManager> initializers_tm,

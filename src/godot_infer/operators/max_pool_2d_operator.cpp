@@ -27,30 +27,18 @@ void gdinfer::MaxPool2DOperator::dispatch(
     // Resolve buffers
     auto resolve = [&](const std::string& name) -> RID {
         RID rid = ctx.activations_tm->get_buffer_rid(name);
-        if (rid.is_valid()) return rid;
+        if (rid.is_valid()) { return rid; }
         return ctx.initializers_tm->get_buffer_rid(name);
     };
 
     RID input_sb = resolve(node.inputs[0]);
 
-    const auto& in_shape = ctx.shape_table->at(node.inputs[0]);
-    const auto& out_shape = ctx.shape_table->at(node.outputs[0]);
-
-    ERR_FAIL_COND_MSG(in_shape.size() != 4, "MaxPool2D: input must be 4D (NCHW)");
-
-    const auto& attrs = std::get<Physical::MaxPool2DAttrs>(node.attributes);
-
-    uint32_t batch_size = in_shape[0];
-    uint32_t channels = in_shape[1];
-    uint32_t in_height = in_shape[2];
-    uint32_t in_width = in_shape[3];
-    uint32_t out_h = out_shape[2];
-    uint32_t out_w = out_shape[3];
+    const auto& d = std::get<passes::MaxPool2DDispatchData>(*ctx.dispatch_data);
 
     RID out_buf = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
 
     // Uniforms
-    auto make_uniform = [&](RID rid, int binding) {
+    auto make_uniform = [&](const RID& rid, int binding) {
         Ref<RDUniform> u;
         u.instantiate();
         u->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
@@ -65,26 +53,27 @@ void gdinfer::MaxPool2DOperator::dispatch(
 
     RID uniform_set_rid = ctx.rd->uniform_set_create(uniforms, _shader, 0);
     ctx.frame_deletion_stack->push([uniform_set_rid, rd = ctx.rd]() {
-        if (rd->uniform_set_is_valid(uniform_set_rid))
+        if (rd->uniform_set_is_valid(uniform_set_rid)) {
             rd->free_rid(uniform_set_rid);
+        }
     });
 
     // Push constants
     PushConstants pc{
-        .batch_size = batch_size,
-        .channels = channels,
-        .in_height = in_height,
-        .in_width = in_width,
-        .out_height = out_h,
-        .out_width = out_w,
-        .kernel_h = attrs.kernel_h,
-        .kernel_w = attrs.kernel_w,
-        .padding_top = attrs.padding_top,
-        .padding_left = attrs.padding_left,
-        .stride_y = attrs.stride_y,
-        .stride_x = attrs.stride_x,
-        .dilation_y = attrs.dilation_y,
-        .dilation_x = attrs.dilation_x};
+        .batch_size = d.batch_size,
+        .channels = d.channels,
+        .in_height = d.in_height,
+        .in_width = d.in_width,
+        .out_height = d.out_height,
+        .out_width = d.out_width,
+        .kernel_h = d.kernel_h,
+        .kernel_w = d.kernel_w,
+        .padding_top = d.padding_top,
+        .padding_left = d.padding_left,
+        .stride_y = d.stride_y,
+        .stride_x = d.stride_x,
+        .dilation_y = d.dilation_y,
+        .dilation_x = d.dilation_x};
 
     PackedByteArray pc_bytes;
     pc_bytes.resize(sizeof(PushConstants));
@@ -94,12 +83,12 @@ void gdinfer::MaxPool2DOperator::dispatch(
     ctx.rd->compute_list_bind_uniform_set(ctx.compute_list, uniform_set_rid, 0);
     ctx.rd->compute_list_set_push_constant(ctx.compute_list, pc_bytes, pc_bytes.size());
 
-    uint32_t workgroup_count_z = batch_size * channels;
+    uint32_t workgroup_count_z = d.batch_size * d.channels;
 
     ctx.rd->compute_list_dispatch(
         ctx.compute_list,
-        (out_w + 7) / 8,
-        (out_h + 7) / 8,
+        (d.out_width + 7) / 8,
+        (d.out_height + 7) / 8,
         workgroup_count_z);
 }
 

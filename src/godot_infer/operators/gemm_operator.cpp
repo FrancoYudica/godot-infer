@@ -26,7 +26,7 @@ void gdinfer::GemmOperator::dispatch(
     // Resolve buffers
     auto resolve = [&](const std::string& name) -> RID {
         RID rid = ctx.activations_tm->get_buffer_rid(name);
-        if (rid.is_valid()) return rid;
+        if (rid.is_valid()) { return rid; }
         return ctx.initializers_tm->get_buffer_rid(name);
     };
 
@@ -34,19 +34,12 @@ void gdinfer::GemmOperator::dispatch(
     RID weight_sb = resolve(node.inputs[1]);
     RID bias_sb = resolve(node.inputs[2]);
 
-    const auto& in_shape = ctx.shape_table->at(node.inputs[0]);
-
-    ERR_FAIL_COND_MSG(in_shape.size() != 2, "GEMM: input tensor must be 2D");
-
-    uint32_t M = in_shape[0];
-    uint32_t K = in_shape[1];
-    const auto& out_shape = ctx.shape_table->at(node.outputs[0]);
-    uint32_t N = out_shape[1];
+    const auto& d = std::get<passes::GemmDispatchData>(*ctx.dispatch_data);
 
     RID out_buf = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
 
     // Uniforms
-    auto make_uniform = [&](RID rid, int binding) {
+    auto make_uniform = [&](const RID& rid, int binding) {
         Ref<RDUniform> u;
         u.instantiate();
         u->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
@@ -63,13 +56,13 @@ void gdinfer::GemmOperator::dispatch(
 
     RID uniform_set_rid = ctx.rd->uniform_set_create(uniforms, _shader, 0);
     ctx.frame_deletion_stack->push([uniform_set_rid, rd = ctx.rd]() {
-        if (rd->uniform_set_is_valid(uniform_set_rid))
+        if (rd->uniform_set_is_valid(uniform_set_rid)) {
             rd->free_rid(uniform_set_rid);
+        }
     });
 
     // Push constants
-    auto& gemm = std::get<Physical::GemmAttrs>(node.attributes);
-    PushConstants pc{M, N, K, gemm.alpha, gemm.beta};
+    PushConstants pc{.M = d.M, .N = d.N, .K = d.K, .alpha = d.alpha, .beta = d.beta};
     PackedByteArray pc_bytes;
     pc_bytes.resize(sizeof(PushConstants));
     memcpy(pc_bytes.ptrw(), &pc, sizeof(PushConstants));
@@ -78,8 +71,8 @@ void gdinfer::GemmOperator::dispatch(
     ctx.rd->compute_list_bind_uniform_set(ctx.compute_list, uniform_set_rid, 0);
     ctx.rd->compute_list_set_push_constant(ctx.compute_list, pc_bytes, pc_bytes.size());
 
-    uint32_t workgroup_count_x = (M + 7) / 8;
-    uint32_t workgroup_count_y = (N + 7) / 8;
+    uint32_t workgroup_count_x = (d.M + 7) / 8;
+    uint32_t workgroup_count_y = (d.N + 7) / 8;
 
     ctx.rd->compute_list_dispatch(
         ctx.compute_list,

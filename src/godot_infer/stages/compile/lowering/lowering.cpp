@@ -2,25 +2,27 @@
 
 namespace gdinfer::passes {
 
-static OperationResult low_relu(const compile::parser::Node& node, Physical::Graph& graph) {
+namespace {
+
+OperationResult low_relu(const compile::parser::Node& node, Physical::Graph& graph) {
     Physical::Node n;
     n.inputs = node.inputs;
     n.outputs = node.outputs;
     n.op = Physical::Operator::ReLU;
     graph.nodes.push_back(std::move(n));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_sigmoid(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_sigmoid(const compile::parser::Node& node, Physical::Graph& graph) {
     Physical::Node n;
     n.inputs = node.inputs;
     n.outputs = node.outputs;
     n.op = Physical::Operator::Sigmoid;
     graph.nodes.push_back(std::move(n));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_gemm(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_gemm(const compile::parser::Node& node, Physical::Graph& graph) {
     const auto& l_attrs = std::get<compile::parser::GemmAttrs>(node.attributes);
 
     Physical::Node n;
@@ -34,14 +36,14 @@ static OperationResult low_gemm(const compile::parser::Node& node, Physical::Gra
 
     n.op = Physical::Operator::Gemm;
     graph.nodes.push_back(std::move(n));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_conv(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_conv(const compile::parser::Node& node, Physical::Graph& graph) {
     const auto& l_attrs = std::get<compile::parser::ConvAttrs>(node.attributes);
 
     const std::string col_name = node.outputs[0] + "__col";
-    // GEMM writes [OH*OW, OC]; the permutation reshape below transposes to [OC, OH*OW] (BCHW).
+    // GEMM writes [OH*OW, OC]; the matrix transpose below transposes to [OC, OH*OW] (BCHW).
     const std::string flat_name = node.outputs[0] + "__flat";
 
     Physical::Node im2col;
@@ -67,28 +69,22 @@ static OperationResult low_conv(const compile::parser::Node& node, Physical::Gra
     Physical::Node gemm;
     gemm.inputs = {col_name, node.inputs[1], node.inputs[2]};
     gemm.outputs = {flat_name}; // [OH*OW, OC]
-    gemm.attributes = Physical::GemmAttrs{1.0f, 1.0f};
+    gemm.attributes = Physical::GemmAttrs{.alpha = 1.0F, .beta = 1.0F};
     gemm.op = Physical::Operator::Gemm;
 
     // GPU matrix transpose [OH*OW, OC] -> [OC, OH*OW], then relabel as 4D BCHW.
-    Physical::ReshapeAttrs reshape_attrs{
-        .mode = Physical::ReshapeMode::GemmToImage,
-        .image_shape_ref = col_name + "__4d",
-        .is_permutation = true};
-
-    Physical::Node reshape;
-    reshape.inputs = {flat_name};
-    reshape.outputs = node.outputs;
-    reshape.attributes = reshape_attrs;
-    reshape.op = Physical::Operator::Reshape;
+    Physical::Node transpose;
+    transpose.inputs = {flat_name};
+    transpose.outputs = node.outputs;
+    transpose.op = Physical::Operator::MatrixTranspose;
 
     graph.nodes.push_back(std::move(im2col));
     graph.nodes.push_back(std::move(gemm));
-    graph.nodes.push_back(std::move(reshape));
-    return {true, {}};
+    graph.nodes.push_back(std::move(transpose));
+    return OPERATION_OK;
 }
 
-static OperationResult low_im2col(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_im2col(const compile::parser::Node& node, Physical::Graph& graph) {
     const auto& l_attrs = std::get<compile::parser::ConvAttrs>(node.attributes);
 
     Physical::Node n;
@@ -109,54 +105,54 @@ static OperationResult low_im2col(const compile::parser::Node& node, Physical::G
 
     n.op = Physical::Operator::Im2Col;
     graph.nodes.push_back(std::move(n));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_conv_transpose(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_conv_transpose(const compile::parser::Node& node, Physical::Graph& graph) {
     const auto& l_attrs = std::get<compile::parser::ConvTransposeAttrs>(node.attributes);
 
     const std::string flat_name = node.inputs[0] + "__flat";
     const std::string gemm_name = node.outputs[0] + "__gemm";
     const std::string col2im_name = node.outputs[0] + "__col2im";
 
-    // GPU matrix transpose: BCHW [1, IC, IH, IW] (memory: [IC, IH*IW]) -> [IH*IW, IC]
-    // so that GEMM receives the input in the expected [B*IH*IW, IC] row-major format.
-    // Note: is_permutation=true is correct for batch=1 only; batch>1 needs a 4D permute.
-    Physical::Node pre_reshape;
-    pre_reshape.op = Physical::Operator::Reshape;
-    pre_reshape.inputs = {node.inputs[0]};
-    pre_reshape.outputs = {flat_name};
-    pre_reshape.attributes = Physical::ReshapeAttrs{
-        .mode = Physical::ReshapeMode::ImageToGemm,
-        .is_permutation = true};
+    // BCHW [1, IC, IH, IW] -> [IH*IW, IC] so GEMM gets row-major input. Correct for batch=1
+    // only; batch>1 needs a 4D permute.
+    Physical::Node pre_transpose;
+    pre_transpose.op = Physical::Operator::MatrixTranspose;
+    pre_transpose.inputs = {node.inputs[0]};
+    pre_transpose.outputs = {flat_name};
 
     // ONNX ConvTranspose weights are [ic, oc, kH, kW]. The GEMM shader always
     // computes A x B^T, so transpose to [oc*kH*kW, ic] at load time.
     const std::string& weight_name = node.inputs[1];
-    if (graph.initializers.find(weight_name) == graph.initializers.end())
-        return {false, "ConvTranspose: weight tensor '" + weight_name + "' not found in initializers"};
+    if (!graph.initializers.contains(weight_name)) {
+        return {.success = false, .error = "ConvTranspose: weight tensor '" + weight_name + "' not found in initializers"};
+    }
 
     const std::string transposed_weight_name = weight_name + "__T";
     {
         const Tensor& w = graph.initializers.at(weight_name);
         const int64_t K = w.shape[0]; // in_channels
         int64_t N = 1;
-        for (size_t i = 1; i < w.shape.size(); ++i)
+        for (size_t i = 1; i < w.shape.size(); ++i) {
             N *= w.shape[i]; // out_channels * kH * kW
+        }
 
         Tensor w_T;
         w_T.name = transposed_weight_name;
         w_T.shape = {N, K};
         w_T.data.resize(static_cast<size_t>(N * K));
-        for (int64_t k = 0; k < K; ++k)
-            for (int64_t n = 0; n < N; ++n)
+        for (int64_t k = 0; k < K; ++k) {
+            for (int64_t n = 0; n < N; ++n) {
                 w_T.data[n * K + k] = w.data[k * N + n];
+            }
+        }
         graph.initializers[transposed_weight_name] = std::move(w_T);
     }
 
     // Gemm: [b*ih*iw, ic] x [oc*kh*kw, ic]^T -> [b*ih*iw, oc*kh*kw]
     // beta = 0.0 because Col2Im will handle bias to avoid multiple accumulation.
-    Physical::GemmAttrs gemm_attrs{.alpha = 1.0f, .beta = 0.0f};
+    Physical::GemmAttrs gemm_attrs{.alpha = 1.0F, .beta = 0.0F};
 
     Physical::Node gemm;
     gemm.op = Physical::Operator::Gemm;
@@ -178,7 +174,6 @@ static OperationResult low_conv_transpose(const compile::parser::Node& node, Phy
         .dilation_x = static_cast<uint32_t>(l_attrs.dilations[1]),
         .output_padding_y = static_cast<uint32_t>(l_attrs.output_padding[0]),
         .output_padding_x = static_cast<uint32_t>(l_attrs.output_padding[1])};
-    col2im_attrs.source_activation = node.inputs[0];
 
     Physical::Node col2im;
     col2im.op = Physical::Operator::Col2Im;
@@ -191,39 +186,40 @@ static OperationResult low_conv_transpose(const compile::parser::Node& node, Phy
     post_reshape.op = Physical::Operator::Reshape;
     post_reshape.inputs = {col2im_name};
     post_reshape.outputs = {node.outputs[0]};
-    post_reshape.attributes = Physical::ReshapeAttrs{
-        .mode = Physical::ReshapeMode::GemmToImage,
-        .image_shape_ref = col2im_name + "__4d"};
+    // target_shape is left empty here: configure_conv_transpose_shapes resolves it directly
+    // into dispatch_data instead (see Physical::ReshapeAttrs's doc comment).
+    post_reshape.attributes = Physical::ReshapeAttrs{};
 
-    graph.nodes.push_back(std::move(pre_reshape));
+    graph.nodes.push_back(std::move(pre_transpose));
     graph.nodes.push_back(std::move(gemm));
     graph.nodes.push_back(std::move(col2im));
     graph.nodes.push_back(std::move(post_reshape));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_reshape(const compile::parser::Node& node, Physical::Graph& graph) {
-    auto it = graph.initializers.find(node.inputs[1]);
-    if (it == graph.initializers.end())
-        return {false, "Reshape: shape tensor '" + node.inputs[1] + "' not found in initializers"};
+OperationResult low_reshape(const compile::parser::Node& node, Physical::Graph& graph) {
+    if (!graph.initializers.contains(node.inputs[1])) {
+        return {.success = false, .error = "Reshape: shape tensor '" + node.inputs[1] + "' not found in initializers"};
+    }
+    const auto& it = graph.initializers.find(node.inputs[1]);
 
     std::vector<int64_t> target_shape;
-    for (float v : it->second.data)
+    for (float v : it->second.data) {
         target_shape.push_back(static_cast<int64_t>(v));
+    }
 
     Physical::Node n;
     n.op = Physical::Operator::Reshape;
     n.inputs = {node.inputs[0]};
     n.outputs = node.outputs;
     n.attributes = Physical::ReshapeAttrs{
-        .mode = Physical::ReshapeMode::Standard,
         .target_shape = std::move(target_shape)};
 
     graph.nodes.push_back(std::move(n));
-    return {true, {}};
+    return OPERATION_OK;
 }
 
-static OperationResult low_max_pool_2d(const compile::parser::Node& node, Physical::Graph& graph) {
+OperationResult low_max_pool_2d(const compile::parser::Node& node, Physical::Graph& graph) {
     const auto& l_attrs = std::get<compile::parser::MaxPool2DAttrs>(node.attributes);
 
     Physical::Node max_pool;
@@ -244,12 +240,14 @@ static OperationResult low_max_pool_2d(const compile::parser::Node& node, Physic
         .dilation_x = static_cast<uint32_t>(l_attrs.dilations[1])};
 
     graph.nodes.push_back(std::move(max_pool));
-    return {true, {}};
+    return OPERATION_OK;
 }
+
+} // namespace
 
 LoweringResult lower(const compile::parser::Graph& logical_graph) {
     LoweringResult result;
-    result.status = {true, {}};
+    result.status = OPERATION_OK;
     auto& graph = result.graph;
 
     graph.input_names = logical_graph.input_names;
@@ -258,6 +256,7 @@ LoweringResult lower(const compile::parser::Graph& logical_graph) {
 
     for (const auto& node : logical_graph.nodes) {
         OperationResult op_result;
+        const size_t physical_before = graph.nodes.size();
 
         switch (node.op) {
         case compile::parser::Operator::ReLU:
@@ -285,7 +284,7 @@ LoweringResult lower(const compile::parser::Graph& logical_graph) {
             op_result = low_reshape(node, graph);
             break;
         case compile::parser::Operator::Unknown:
-            result.status = {false, "lowering: encountered unknown op"};
+            result.status = {.success = false, .error = "lowering: encountered unknown op"};
             return result;
         }
 
@@ -293,6 +292,17 @@ LoweringResult lower(const compile::parser::Graph& logical_graph) {
             result.status = op_result;
             return result;
         }
+
+        const size_t source_op_index = result.source_ops.size();
+        SourceOpRecord record;
+        record.op_type = node.op;
+        record.attrs = node.attributes;
+        record.original_inputs = node.inputs;
+        for (size_t i = physical_before; i < graph.nodes.size(); ++i) {
+            graph.nodes[i].source_op = source_op_index;
+            record.physical_nodes.push_back(i);
+        }
+        result.source_ops.push_back(std::move(record));
     }
 
     return result;

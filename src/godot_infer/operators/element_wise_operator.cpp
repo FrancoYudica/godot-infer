@@ -22,21 +22,18 @@ void ElementwiseOperator::dispatch(
 
     auto resolve = [&](const std::string& name) -> RID {
         RID rid = ctx.activations_tm->get_buffer_rid(name);
-        if (rid.is_valid()) return rid;
+        if (rid.is_valid()) { return rid; }
         return ctx.initializers_tm->get_buffer_rid(name);
     };
 
     RID input = resolve(node.inputs[0]);
     RID output = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
 
-    const auto& out_shape = ctx.shape_table->at(node.outputs[0]);
-    uint32_t total_floats = 1;
-    for (auto d : out_shape)
-        total_floats *= static_cast<uint32_t>(d);
+    uint32_t total_floats = std::get<passes::ElementwiseDispatchData>(*ctx.dispatch_data).total_elements;
 
     TypedArray<RDUniform> uniforms;
 
-    auto make_uniform = [&](RID rid, int binding) {
+    auto make_uniform = [&](const RID& rid, int binding) {
         Ref<RDUniform> u;
         u.instantiate();
         u->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
@@ -51,11 +48,12 @@ void ElementwiseOperator::dispatch(
     RID uniform_set_rid = ctx.rd->uniform_set_create(uniforms, _shader, 0);
     ctx.frame_deletion_stack->push(
         [uniform_set_rid, rd = ctx.rd]() {
-            if (rd->uniform_set_is_valid(uniform_set_rid))
+            if (rd->uniform_set_is_valid(uniform_set_rid)) {
                 rd->free_rid(uniform_set_rid);
+            }
         });
 
-    PushConstants pc{total_floats};
+    PushConstants pc{.total = total_floats};
     PackedByteArray pc_bytes;
     pc_bytes.resize(sizeof(PushConstants));
     memcpy(pc_bytes.ptrw(), &pc, sizeof(PushConstants));

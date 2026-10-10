@@ -27,25 +27,9 @@ void gdinfer::Im2ColOperator::dispatch(
     RID input_sb = ctx.activations_tm->get_buffer_rid(node.inputs[0]);
     RID out_buf = ctx.activations_tm->get_buffer_rid(node.outputs[0]);
 
-    const auto& in_shape = ctx.shape_table->at(node.inputs[0]);
-    const auto& out_shape = ctx.shape_table->at(node.outputs[0]);
+    const auto& d = std::get<passes::Im2ColDispatchData>(*ctx.dispatch_data);
 
-    const auto& attrs = std::get<Physical::ConvAttrs>(node.attributes);
-
-    uint32_t batch_size = in_shape[0];
-    uint32_t channels = in_shape[1];
-    uint32_t in_height = in_shape[2];
-    uint32_t in_width = in_shape[3];
-
-    // Compute out_h and out_w based on the input shape and convolution attributes
-    int64_t kh_effective = (attrs.kernel_h - 1) * attrs.dilation_y + 1;
-    int64_t kw_effective = (attrs.kernel_w - 1) * attrs.dilation_x + 1;
-    int64_t pad_horizontal = attrs.padding_left + attrs.padding_right;
-    int64_t pad_vertical = attrs.padding_top + attrs.padding_bottom;
-    int64_t out_h = (in_height + pad_vertical - kh_effective) / attrs.stride_y + 1;
-    int64_t out_w = (in_width + pad_horizontal - kw_effective) / attrs.stride_x + 1;
-
-    auto make_uniform = [&](RID rid, int binding) {
+    auto make_uniform = [&](const RID& rid, int binding) {
         Ref<RDUniform> u;
         u.instantiate();
         u->set_uniform_type(RenderingDevice::UNIFORM_TYPE_STORAGE_BUFFER);
@@ -60,24 +44,25 @@ void gdinfer::Im2ColOperator::dispatch(
 
     RID uniform_set_rid = ctx.rd->uniform_set_create(uniforms, _shader, 0);
     ctx.frame_deletion_stack->push([uniform_set_rid, rd = ctx.rd]() {
-        if (rd->uniform_set_is_valid(uniform_set_rid))
+        if (rd->uniform_set_is_valid(uniform_set_rid)) {
             rd->free_rid(uniform_set_rid);
+        }
     });
 
     PushConstants pc{
-        .in_channels = channels,
-        .in_height = in_height,
-        .in_width = in_width,
-        .out_height = static_cast<uint32_t>(out_h),
-        .out_width = static_cast<uint32_t>(out_w),
-        .kernel_h = attrs.kernel_h,
-        .kernel_w = attrs.kernel_w,
-        .padding_top = attrs.padding_top,
-        .padding_left = attrs.padding_left,
-        .stride_y = attrs.stride_y,
-        .stride_x = attrs.stride_x,
-        .dilation_y = attrs.dilation_y,
-        .dilation_x = attrs.dilation_x};
+        .in_channels = d.in_channels,
+        .in_height = d.in_height,
+        .in_width = d.in_width,
+        .out_height = d.out_height,
+        .out_width = d.out_width,
+        .kernel_h = d.kernel_h,
+        .kernel_w = d.kernel_w,
+        .padding_top = d.padding_top,
+        .padding_left = d.padding_left,
+        .stride_y = d.stride_y,
+        .stride_x = d.stride_x,
+        .dilation_y = d.dilation_y,
+        .dilation_x = d.dilation_x};
 
     PackedByteArray pc_bytes;
     pc_bytes.resize(sizeof(PushConstants));
@@ -87,7 +72,7 @@ void gdinfer::Im2ColOperator::dispatch(
     ctx.rd->compute_list_bind_uniform_set(ctx.compute_list, uniform_set_rid, 0);
     ctx.rd->compute_list_set_push_constant(ctx.compute_list, pc_bytes, pc_bytes.size());
 
-    uint32_t total_workers = out_h * out_w * channels * attrs.kernel_w * attrs.kernel_h;
+    uint32_t total_workers = d.out_height * d.out_width * d.in_channels * d.kernel_w * d.kernel_h;
     uint32_t workgroup_count = (total_workers + 63) / 64;
     ctx.rd->compute_list_dispatch(ctx.compute_list, workgroup_count, 1, 1);
 }
