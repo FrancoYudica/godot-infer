@@ -1,6 +1,6 @@
 #include "lowering.hpp"
 
-namespace gdinfer::passes {
+namespace gdinfer::compile::lowering {
 
 namespace {
 
@@ -308,4 +308,4 @@ LoweringResult lower(const compile::parser::Graph& logical_graph) {
     return result;
 }
 
-} // namespace gdinfer::passes
+} // namespace gdinfer::compile::lowering

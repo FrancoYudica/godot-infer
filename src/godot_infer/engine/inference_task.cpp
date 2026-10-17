@@ -17,7 +17,7 @@ void InferenceTask::init(
     uint32_t graph_id,
     RenderingDevice* rd,
     Ref<InferenceDescriptor> descriptor,
-    gdinfer::StorageBufferPool* buffer_pool) {
+    gdinfer::execute::tensors::StorageBufferPool* buffer_pool) {
     this->task_id = task_id;
     this->graph_id = graph_id;
     this->activations_tm.instantiate();

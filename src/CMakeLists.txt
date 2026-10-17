@@ -66,7 +66,7 @@ file(GLOB_RECURSE GD_INFER_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR
 
 # TEMP: These lines shouldn't exist once the migration is complete.
 list(FILTER GD_INFER_SOURCES EXCLUDE REGEX "/godot_infer/core/")
-list(FILTER GD_INFER_SOURCES EXCLUDE REGEX "/godot_infer/stages/")
+list(FILTER GD_INFER_SOURCES EXCLUDE REGEX "/godot_infer/stages/compile/")
 add_library(godot_infer SHARED
     register_types.cpp
     ${GD_INFER_SOURCES}

@@ -3,12 +3,13 @@
 #include "core/core.hpp"
 #include "inference_descriptor.hpp"
 #include "inference_task.hpp"
-#include "io/io.hpp"
+#include "stages/execute/deletion_stack.hpp"
+#include "stages/execute/io/io.hpp"
 #include "io/onnx_resource.hpp"
-#include "operators/operators.hpp"
+#include "stages/execute/operators/operators.hpp"
 #include "stages/compile/lowering/lowering.hpp"
 #include "stages/compile/parser/parser.hpp"
-#include "tensors/tensors.hpp"
+#include "stages/execute/tensors/tensors.hpp"
 
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/rd_uniform.hpp>
@@ -18,9 +19,9 @@
 namespace godot {
 
 struct GraphContext {
-    gdinfer::Physical::Graph graph;
-    gdinfer::passes::SourceOpTable source_ops;
-    Ref<gdinfer::TensorResourceManager> initializers_tm;
+    gdinfer::compile::lowering::Physical::Graph graph;
+    gdinfer::compile::lowering::SourceOpTable source_ops;
+    Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm;
 };
 
 class MLInferenceEngine : public RefCounted {
@@ -50,24 +51,24 @@ class MLInferenceEngine : public RefCounted {
     void _process_pending_tasks();
     void _process_task(Ref<InferenceTask> task);
     void _run_node(
-        const gdinfer::Physical::Graph& graph,
-        const gdinfer::passes::SourceOpTable& source_ops,
-        const gdinfer::passes::DispatchData& dispatch_data,
-        const gdinfer::Physical::Node& node,
+        const gdinfer::compile::lowering::Physical::Graph& graph,
+        const gdinfer::compile::lowering::SourceOpTable& source_ops,
+        const gdinfer::execute::shape_inference::DispatchData& dispatch_data,
+        const gdinfer::compile::lowering::Physical::Node& node,
         int64_t compute_list,
-        Ref<gdinfer::TensorResourceManager> initializers_tm,
-        Ref<gdinfer::TensorResourceManager> activations_tm,
-        const gdinfer::ShapeTable& shape_table);
+        Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm,
+        Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm,
+        const gdinfer::execute::shape_inference::ShapeTable& shape_table);
     void _allocate_activations(
-        const gdinfer::Physical::Graph& graph,
-        const gdinfer::ShapeTable& shape_table,
-        Ref<gdinfer::TensorResourceManager> activations_tm);
+        const gdinfer::compile::lowering::Physical::Graph& graph,
+        const gdinfer::execute::shape_inference::ShapeTable& shape_table,
+        Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm);
 
     void _free_all_resources();
     bool _has_graph(uint32_t graph_rid);
     bool _validate_inputs(
-        const gdinfer::Physical::Graph& graph,
-        gdinfer::ShapeTable& shape_table);
+        const gdinfer::compile::lowering::Physical::Graph& graph,
+        gdinfer::execute::shape_inference::ShapeTable& shape_table);
 
     void _capture_timestamp(const String& label);
     void _collect_task_timestamps();
@@ -76,10 +77,10 @@ class MLInferenceEngine : public RefCounted {
 
   private:
     RenderingDevice* _rd;
-    gdinfer::StorageBufferPool _sb_pool;
-    gdinfer::OperatorRegistry _operator_registry;
-    gdinfer::InputHandlerRegistry _input_registry;
-    gdinfer::OutputHandlerRegistry _output_registry;
+    gdinfer::execute::tensors::StorageBufferPool _sb_pool;
+    gdinfer::execute::operators::OperatorRegistry _operator_registry;
+    gdinfer::execute::io::InputHandlerRegistry _input_registry;
+    gdinfer::execute::io::OutputHandlerRegistry _output_registry;
     std::unordered_map<uint32_t, GraphContext> _graphs;
     std::vector<Ref<InferenceTask>> _pending_tasks;
     std::vector<Ref<InferenceTask>> _executing_tasks;
@@ -88,7 +89,7 @@ class MLInferenceEngine : public RefCounted {
     bool _destroying = false;
     bool _capture_timestamps = false;
 
-    gdinfer::DeletionStack _frame_deletion_stack;
+    gdinfer::execute::DeletionStack _frame_deletion_stack;
 
     uint32_t _next_graph_id = 1;
     uint32_t _next_task_id = 0;

@@ -1,5 +1,6 @@
-# gdinfer_core: OperationResult, Tensor, ShapeTable, Logical::/Physical:: types.
-# Lowest-level target, no godot_infer dependencies of its own.
+# gdinfer_core: OperationResult, Tensor, and generic utils (shape formatting,
+# iterator-to-string). Lowest-level target, no godot_infer dependencies of its
+# own, and no dependency on any pipeline stage's own types.
 
 file(GLOB_RECURSE GD_INFER_CORE_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 

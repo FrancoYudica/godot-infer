@@ -1,6 +1,9 @@
 #include "inference_engine.hpp"
 
-#include "passes/passes.hpp"
+#include "stages/compile/lowering/lowering.hpp"
+#include "stages/compile/lowering/lowering_validation.hpp"
+#include "stages/compile/lowering/utils.hpp"
+#include "stages/execute/shape_inference/shape_inference.hpp"
 
 #include <godot_cpp/classes/rd_shader_file.hpp>
 #include <godot_cpp/classes/rd_shader_spirv.hpp>
@@ -103,13 +106,13 @@ uint32_t MLInferenceEngine::register_model(Ref<ONNXResource> resource) {
         0,
         ("InferenceEngine: parse failed: " + parse_result.status.error).c_str());
 
-    auto lower_result = gdinfer::passes::lower(parse_result.graph);
+    auto lower_result = gdinfer::compile::lowering::lower(parse_result.graph);
     ERR_FAIL_COND_V_MSG(
         !lower_result.status.success,
         0,
         ("InferenceEngine: lowering failed: " + lower_result.status.error).c_str());
 
-    auto validation_result = gdinfer::passes::lowering_validation(lower_result.graph);
+    auto validation_result = gdinfer::compile::lowering::lowering_validation(lower_result.graph);
     ERR_FAIL_COND_V_MSG(
         !validation_result.success,
         0,
@@ -174,7 +177,7 @@ void MLInferenceEngine::print_model(uint32_t model_rid) {
         "InferenceEngine: model " + String::num(model_rid) + " not found.");
 
     auto it = _graphs.find(model_rid);
-    gdinfer::Utils::print(it->second.graph);
+    gdinfer::compile::lowering::utils::print(it->second.graph);
 }
 
 void MLInferenceEngine::destroy_task(Ref<InferenceTask> task) {
@@ -247,12 +250,12 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     auto it = _graphs.find(task->graph_id);
     ERR_FAIL_COND_MSG(it == _graphs.end(), "InferenceEngine: graph not found.");
 
-    const gdinfer::Physical::Graph& graph = it->second.graph;
-    const gdinfer::passes::SourceOpTable& source_ops = it->second.source_ops;
-    Ref<gdinfer::TensorResourceManager> initializers_tm = it->second.initializers_tm;
+    const gdinfer::compile::lowering::Physical::Graph& graph = it->second.graph;
+    const gdinfer::compile::lowering::SourceOpTable& source_ops = it->second.source_ops;
+    Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm = it->second.initializers_tm;
 
     // 1. Collect input shapes from the descriptor
-    gdinfer::ShapeTable input_shapes;
+    gdinfer::execute::shape_inference::ShapeTable input_shapes;
     for (const auto& [name, descriptor] : task->descriptor->inputs) {
         auto& handler = _input_registry.get(descriptor->type);
         input_shapes[name] = handler->get_shape(descriptor);
@@ -264,11 +267,11 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     }
 
     // 2. Shape inference - forward pass to compute all intermediate tensor shapes.
-    auto infer_result = gdinfer::passes::infer_shapes(graph, source_ops, input_shapes);
+    auto infer_result = gdinfer::execute::shape_inference::infer_shapes(graph, source_ops, input_shapes);
     ERR_FAIL_COND_MSG(
         !infer_result.status.success,
         ("MLInferenceEngine: shape inference failed: " + infer_result.status.error).c_str());
-    const gdinfer::ShapeTable& shape_table = infer_result.shapes;
+    const gdinfer::execute::shape_inference::ShapeTable& shape_table = infer_result.shapes;
 
     // 3. Pre-allocate all activation buffers before recording the compute list.
     _allocate_activations(graph, shape_table, task->activations_tm);
@@ -276,7 +279,7 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     _capture_timestamp(String::num(task->task_id) + ":begin");
 
     // 4. Upload model inputs to GPU.
-    gdinfer::InputHandlerContext in_ctx = {
+    gdinfer::execute::io::InputHandlerContext in_ctx = {
         .rd = _rd,
         .activations_tm = task->activations_tm,
         .compute_list = 0,
@@ -299,17 +302,17 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     _rd->compute_list_add_barrier(compute_list);
 
     for (size_t node_index = 0; node_index < graph.nodes.size(); ++node_index) {
-        const gdinfer::Physical::Node& node = graph.nodes[node_index];
+        const gdinfer::compile::lowering::Physical::Node& node = graph.nodes[node_index];
         _run_node(
             graph, source_ops, infer_result.dispatch_data[node_index], node,
             compute_list, initializers_tm, task->activations_tm, shape_table);
         _rd->compute_list_add_barrier(compute_list);
         _capture_timestamp(
             String::num(task->task_id) + ":" +
-            String::num(static_cast<uint32_t>(node_index)) + "_" + gdinfer::Utils::op_name(node.op).c_str());
+            String::num(static_cast<uint32_t>(node_index)) + "_" + gdinfer::compile::lowering::utils::op_name(node.op).c_str());
     }
 
-    gdinfer::OutputHandlerContext out_ctx = {
+    gdinfer::execute::io::OutputHandlerContext out_ctx = {
         .rd = _rd,
         .activations_tm = task->activations_tm,
         .compute_list = compute_list,
@@ -334,13 +337,13 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
 }
 
 void MLInferenceEngine::_allocate_activations(
-    const gdinfer::Physical::Graph& graph,
-    const gdinfer::ShapeTable& shape_table,
-    Ref<gdinfer::TensorResourceManager> activations_tm) {
+    const gdinfer::compile::lowering::Physical::Graph& graph,
+    const gdinfer::execute::shape_inference::ShapeTable& shape_table,
+    Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm) {
 
     for (const auto& node : graph.nodes) {
         // Reshape nodes always create zero-copy aliases, never real GPU buffers.
-        if (node.op == gdinfer::Physical::Operator::Reshape) continue;
+        if (node.op == gdinfer::compile::lowering::Physical::Operator::Reshape) continue;
         for (const auto& name : node.outputs) {
             auto it = shape_table.find(name);
             if (it != shape_table.end()) {
@@ -351,19 +354,19 @@ void MLInferenceEngine::_allocate_activations(
 }
 
 void MLInferenceEngine::_run_node(
-    const gdinfer::Physical::Graph& graph,
-    const gdinfer::passes::SourceOpTable& source_ops,
-    const gdinfer::passes::DispatchData& dispatch_data,
-    const gdinfer::Physical::Node& node,
+    const gdinfer::compile::lowering::Physical::Graph& graph,
+    const gdinfer::compile::lowering::SourceOpTable& source_ops,
+    const gdinfer::execute::shape_inference::DispatchData& dispatch_data,
+    const gdinfer::compile::lowering::Physical::Node& node,
     int64_t compute_list,
-    Ref<gdinfer::TensorResourceManager> initializers_tm,
-    Ref<gdinfer::TensorResourceManager> activations_tm,
-    const gdinfer::ShapeTable& shape_table) {
+    Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm,
+    Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm,
+    const gdinfer::execute::shape_inference::ShapeTable& shape_table) {
 
     auto op = _operator_registry.get(node.op);
     ERR_FAIL_COND_MSG(op == nullptr, "MLInferenceEngine: unsupported operator, skipping node.");
 
-    gdinfer::OperatorContext ctx{
+    gdinfer::execute::operators::OperatorContext ctx{
         .rd = _rd,
         .initializers_tm = initializers_tm,
         .activations_tm = activations_tm,
@@ -391,8 +394,8 @@ bool MLInferenceEngine::_has_graph(uint32_t graph_rid) {
     return _graphs.find(graph_rid) != _graphs.end();
 }
 bool MLInferenceEngine::_validate_inputs(
-    const gdinfer::Physical::Graph& graph,
-    gdinfer::ShapeTable& shape_table) {
+    const gdinfer::compile::lowering::Physical::Graph& graph,
+    gdinfer::execute::shape_inference::ShapeTable& shape_table) {
     // Make sure that all the required input shapes are defined and valid.
     for (const auto& input_name : graph.input_names) {
         ERR_FAIL_COND_V_MSG(

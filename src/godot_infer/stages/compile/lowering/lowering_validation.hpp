@@ -1,7 +1,8 @@
 #pragma once
 #include "core/core.hpp" // IWYU pragma: export
+#include "types.hpp"     // IWYU pragma: export
 
-namespace gdinfer::passes {
+namespace gdinfer::compile::lowering {
 
 /**
  * Validates a Physical::Graph after lowering.
@@ -12,4 +13,4 @@ namespace gdinfer::passes {
  */
 OperationResult lowering_validation(const Physical::Graph& graph);
 
-} // namespace gdinfer::passes
+} // namespace gdinfer::compile::lowering

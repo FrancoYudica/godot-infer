@@ -1,8 +1,9 @@
 #pragma once
 #include "core/core.hpp"                   // IWYU pragma: export
 #include "stages/compile/parser/types.hpp" // IWYU pragma: export
+#include "types.hpp"                       // IWYU pragma: export
 
-namespace gdinfer::passes {
+namespace gdinfer::compile::lowering {
 
 // Maps one logical op to the physical nodes it lowered into, plus its original attrs for
 // shape inference to use.
@@ -35,4 +36,4 @@ struct LoweringResult {
 
 LoweringResult lower(const compile::parser::Graph& graph);
 
-} // namespace gdinfer::passes
+} // namespace gdinfer::compile::lowering

@@ -1,7 +1,7 @@
 #pragma once
 #include "core/core.hpp"
 #include "inference_descriptor.hpp"
-#include "tensors/tensors.hpp"
+#include "stages/execute/tensors/tensors.hpp"
 
 #include <godot_cpp/classes/ref_counted.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -25,7 +25,7 @@ class InferenceTask : public RefCounted {
         uint32_t graph_id,
         RenderingDevice* rd,
         Ref<InferenceDescriptor> descriptor,
-        gdinfer::StorageBufferPool* buffer_pool);
+        gdinfer::execute::tensors::StorageBufferPool* buffer_pool);
     void emit_completed();
     void destroy(RenderingDevice* rd);
     bool is_completed() const {
@@ -39,7 +39,7 @@ class InferenceTask : public RefCounted {
     Dictionary get_performance_report() const;
 
   public:
-    Ref<gdinfer::TensorResourceManager> activations_tm;
+    Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm;
     uint32_t task_id = 0;
     uint32_t graph_id;
     Ref<InferenceDescriptor> descriptor;

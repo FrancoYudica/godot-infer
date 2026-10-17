@@ -1,13 +1,15 @@
 #include "lowering_validation.hpp"
 
+#include "utils.hpp"
+
 #include <unordered_set>
 
-namespace gdinfer::passes {
+namespace gdinfer::compile::lowering {
 
 namespace {
 
 std::string node_ctx(size_t idx, Physical::Operator op) {
-    return "[node " + std::to_string(idx) + " (" + Utils::op_name(op) + ")] ";
+    return "[node " + std::to_string(idx) + " (" + utils::op_name(op) + ")] ";
 }
 
 OperationResult check_connectivity(const Physical::Graph& graph) {
@@ -122,7 +124,7 @@ OperationResult check_node_attributes(size_t idx, const Physical::Node& node) {
         }
         break;
 
-    case gdinfer::Physical::Operator::MaxPool2D:
+    case Physical::Operator::MaxPool2D:
         if (!std::holds_alternative<Physical::MaxPool2DAttrs>(node.attributes)) {
             return {.success = false, .error = ctx + "expected MaxPool2DAttributes variant"};
         }
@@ -162,4 +164,4 @@ OperationResult lowering_validation(const Physical::Graph& graph) {
 
     return OPERATION_OK;
 }
-} // namespace gdinfer::passes
+} // namespace gdinfer::compile::lowering

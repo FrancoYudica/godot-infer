@@ -10,10 +10,6 @@
 
 namespace gdinfer {
 
-// Maps every tensor name (inputs, initializers, intermediates) to its concrete shape.
-// Populated by the shape inference pass before each inference call.
-using ShapeTable = std::unordered_map<std::string, std::vector<int64_t>>;
-
 struct OperationResult {
     bool success = true;
     std::string error;

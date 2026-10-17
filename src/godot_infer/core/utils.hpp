@@ -1,21 +1,9 @@
 #pragma once
-#include "physical_types.hpp"
+#include "core_types.hpp"
 
-#include <godot_cpp/classes/rendering_device.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 
-namespace gdinfer {
-namespace Utils {
-/**
- * Gets the project-relative path for a given addon-relative path
- */
-godot::String get_project_relative_path(const godot::String& path);
-
-std::string op_name(Physical::Operator op);
-
-godot::RID load_shader(godot::RenderingDevice* rd, const godot::String& path);
-
-void print(const Physical::Graph& graph);
+namespace gdinfer::Utils {
 
 bool tensor_shape_matches(const std::vector<int64_t>& shape1, const std::vector<int64_t>& shape2);
 
@@ -49,5 +37,4 @@ godot::String get_iterator_str(Iterator begin, Iterator end, const godot::String
     return output;
 }
 
-} // namespace Utils
-} // namespace gdinfer
+} // namespace gdinfer::Utils

@@ -1,0 +1,71 @@
+/**
+ * Defines all the types of I/O descriptors for ML inference.
+ * Note that these don't hold the actual data of the output,
+ * it's instead a
+ */
+
+#pragma once
+#include <godot_cpp/classes/image.hpp>
+#include <godot_cpp/classes/rendering_device.hpp>
+#include <godot_cpp/classes/texture2d.hpp>
+#include <string>
+#include <vector>
+
+namespace gdinfer::execute::io {
+
+enum class InputType {
+    Texture2D,  // GPU texture -> storage buffer
+    FloatArray, // CPU float array -> storage buffer
+};
+
+enum class OutputType {
+    FloatArray, // Read back to CPU
+    Texture2D,  // Write directly to a texture RID
+};
+
+namespace InputDesc {
+
+class BaseData {
+  public:
+    virtual ~BaseData() = default;
+    InputType type;
+    std::string tensor_name;
+};
+
+class Texture : public BaseData {
+  public:
+    godot::Ref<godot::Texture2D> texture;
+    uint32_t channels = 3;  // number of output channels (derived from load_mode)
+    uint32_t load_mode = 0; // LoadTextureMode cast to uint32_t, forwarded to shader
+    uint32_t process_width_override = 0;
+    uint32_t process_height_override = 0;
+};
+
+class FloatArray : public BaseData {
+  public:
+    godot::PackedFloat32Array data;
+    std::vector<int64_t> shape;
+};
+} // namespace InputDesc
+
+namespace OutputDesc {
+
+class BaseData {
+  public:
+    virtual ~BaseData() = default;
+    OutputType type;
+    std::string tensor_name;
+};
+class FloatArray : public BaseData {};
+
+class Texture : public BaseData {
+  public:
+    godot::RID target_texture;
+};
+} // namespace OutputDesc
+
+std::string input_handler_name(const InputType& type);
+
+std::string output_handler_name(const OutputType& type);
+
+} // namespace gdinfer::execute::io
