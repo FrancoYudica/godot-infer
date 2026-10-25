@@ -6,19 +6,19 @@ namespace gdinfer::execute::operators {
 
 class OperatorRegistry {
   public:
-    bool init(godot::RenderingDevice* rd);
+    bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache);
 
     IOperator* get(Physical::Operator op) const;
 
     bool supports(Physical::Operator op) const;
 
-    void destroy(godot::RenderingDevice* rd);
+    void destroy();
 
   private:
     template <typename T>
-    bool _register(Physical::Operator op, godot::RenderingDevice* rd) {
+    bool _register(Physical::Operator op, godot::RenderingDevice* rd, ShaderCache* shader_cache) {
         auto impl = std::make_unique<T>();
-        if (impl->init(rd)) {
+        if (impl->init(rd, shader_cache)) {
             _operators[op] = std::move(impl);
             return true;
         }

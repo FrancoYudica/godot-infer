@@ -5,15 +5,15 @@
 
 namespace gdinfer::execute::io {
 
-bool OutputHandlerRegistry::init(godot::RenderingDevice* rd) {
+bool OutputHandlerRegistry::init(godot::RenderingDevice* rd, ShaderCache* shader_cache) {
     // Register all supported operators
     ERR_FAIL_COND_V_MSG(
-        !_register<FloatArrayOutputHandler>(OutputType::FloatArray, rd),
+        !_register<FloatArrayOutputHandler>(OutputType::FloatArray, rd, shader_cache),
         false,
         "OutputHandlerRegistry: failed to register FloatArray operator.");
 
     ERR_FAIL_COND_V_MSG(
-        !_register<TextureOutputHandlerCompute>(OutputType::Texture2D, rd),
+        !_register<TextureOutputHandlerCompute>(OutputType::Texture2D, rd, shader_cache),
         false,
         "OutputHandlerRegistry: failed to register Texture operator.");
 

@@ -2,6 +2,7 @@
 #include "core/core.hpp"
 #include "io_descriptor.hpp"
 #include "stages/execute/deletion_stack.hpp"
+#include "stages/execute/shader_cache.hpp"
 #include "stages/execute/tensors/tensors.hpp"
 
 #include <godot_cpp/classes/rendering_device.hpp>
@@ -19,7 +20,7 @@ class IOutputHandler {
   public:
     virtual ~IOutputHandler() = default;
 
-    virtual bool init(godot::RenderingDevice* rd) {
+    virtual bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache) {
         return true;
     }
 

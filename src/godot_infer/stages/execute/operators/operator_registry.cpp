@@ -1,7 +1,6 @@
 #include "operator_registry.hpp"
 
 #include "stages/execute/operators/col2im_operator.hpp"
-#include "stages/execute/operators/conv2d_operator.hpp"
 #include "stages/execute/operators/element_wise_operator.hpp"
 #include "stages/execute/operators/gemm_operator.hpp"
 #include "stages/execute/operators/im2col_operator.hpp"
@@ -10,42 +9,38 @@
 #include "stages/execute/operators/reshape_operator.hpp"
 
 namespace gdinfer::execute::operators {
-bool OperatorRegistry::init(godot::RenderingDevice* rd) {
+bool OperatorRegistry::init(godot::RenderingDevice* rd, ShaderCache* shader_cache) {
     // Register all supported operators
     ERR_FAIL_COND_V_MSG(
-        !_register<GemmOperator>(Physical::Operator::Gemm, rd),
+        !_register<GemmOperator>(Physical::Operator::Gemm, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register Gemm operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<ReLUOperator>(Physical::Operator::ReLU, rd),
+        !_register<ReLUOperator>(Physical::Operator::ReLU, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register ReLU operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<SigmoidOperator>(Physical::Operator::Sigmoid, rd),
+        !_register<SigmoidOperator>(Physical::Operator::Sigmoid, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register Sigmoid operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<Conv2DOperator>(Physical::Operator::Conv, rd),
-        false,
-        "OperatorRegistry: failed to register Conv2D operator.");
-    ERR_FAIL_COND_V_MSG(
-        !_register<Im2ColOperator>(Physical::Operator::Im2Col, rd),
+        !_register<Im2ColOperator>(Physical::Operator::Im2Col, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register Im2Col operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<ReshapeOperator>(Physical::Operator::Reshape, rd),
+        !_register<ReshapeOperator>(Physical::Operator::Reshape, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register Reshape operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<MatrixTransposeOperator>(Physical::Operator::MatrixTranspose, rd),
+        !_register<MatrixTransposeOperator>(Physical::Operator::MatrixTranspose, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register MatrixTranspose operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<Col2ImOperator>(Physical::Operator::Col2Im, rd),
+        !_register<Col2ImOperator>(Physical::Operator::Col2Im, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register Col2Im operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<MaxPool2DOperator>(Physical::Operator::MaxPool2D, rd),
+        !_register<MaxPool2DOperator>(Physical::Operator::MaxPool2D, rd, shader_cache),
         false,
         "OperatorRegistry: failed to register MaxPool2D operator.");
     return true;
@@ -64,10 +59,7 @@ bool OperatorRegistry::supports(Physical::Operator op) const {
     return _operators.count(op) > 0;
 }
 
-void OperatorRegistry::destroy(godot::RenderingDevice* rd) {
-    for (auto& [op, impl] : _operators) {
-        impl->destroy(rd);
-    }
+void OperatorRegistry::destroy() {
     _operators.clear();
 }
 

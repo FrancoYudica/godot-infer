@@ -5,7 +5,7 @@
 namespace gdinfer::execute::io {
 class TextureInputHandlerCompute : public IInputHandler {
   public:
-    bool init(godot::RenderingDevice* rd) override;
+    bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache) override;
 
     void destroy(godot::RenderingDevice* rd) override;
 

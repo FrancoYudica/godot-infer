@@ -5,7 +5,7 @@ namespace gdinfer::execute::io {
 
 class OutputHandlerRegistry {
   public:
-    bool init(godot::RenderingDevice* rd);
+    bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache);
 
     const std::unique_ptr<IOutputHandler>& get(
         const OutputType& desc) const;
@@ -15,9 +15,10 @@ class OutputHandlerRegistry {
     template <typename T>
     bool _register(
         OutputType type,
-        godot::RenderingDevice* rd) {
+        godot::RenderingDevice* rd,
+        ShaderCache* shader_cache) {
         auto impl = std::make_unique<T>();
-        if (impl->init(rd)) {
+        if (impl->init(rd, shader_cache)) {
             _handlers[type] = std::move(impl);
             return true;
         }

@@ -7,11 +7,11 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 layout(set = 0, binding = 0, std430) restrict readonly buffer ColBuffer {
   float col_data[]; // [out_H*out_W, in_C*kH*kW]  (gemm output)
 };
-layout(set = 0, binding = 1, std430) buffer OutputBuffer {
-  float out_data[]; // [batch, out_C, out_H, out_W]
-};
-layout(set = 0, binding = 2, std430) restrict readonly buffer BiasBuffer {
+layout(set = 0, binding = 1, std430) restrict readonly buffer BiasBuffer {
   float bias[]; // [out_C]
+};
+layout(set = 0, binding = 2, std430) buffer OutputBuffer {
+  float out_data[]; // [batch, out_C, out_H, out_W]
 };
 
 layout(push_constant) uniform PushConstants {

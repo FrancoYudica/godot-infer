@@ -5,6 +5,7 @@
 #include "inference_task.hpp"
 #include "stages/execute/deletion_stack.hpp"
 #include "stages/execute/io/io.hpp"
+#include "stages/execute/shader_cache.hpp"
 #include "io/onnx_resource.hpp"
 #include "stages/execute/operators/operators.hpp"
 #include "stages/compile/lowering/lowering.hpp"
@@ -51,14 +52,11 @@ class MLInferenceEngine : public RefCounted {
     void _process_pending_tasks();
     void _process_task(Ref<InferenceTask> task);
     void _run_node(
-        const gdinfer::compile::lowering::Physical::Graph& graph,
-        const gdinfer::compile::lowering::SourceOpTable& source_ops,
         const gdinfer::execute::shape_inference::DispatchData& dispatch_data,
         const gdinfer::compile::lowering::Physical::Node& node,
         int64_t compute_list,
         Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm,
-        Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm,
-        const gdinfer::execute::shape_inference::ShapeTable& shape_table);
+        Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm);
     void _allocate_activations(
         const gdinfer::compile::lowering::Physical::Graph& graph,
         const gdinfer::execute::shape_inference::ShapeTable& shape_table,
@@ -78,6 +76,7 @@ class MLInferenceEngine : public RefCounted {
   private:
     RenderingDevice* _rd;
     gdinfer::execute::tensors::StorageBufferPool _sb_pool;
+    gdinfer::execute::ShaderCache _shader_cache;
     gdinfer::execute::operators::OperatorRegistry _operator_registry;
     gdinfer::execute::io::InputHandlerRegistry _input_registry;
     gdinfer::execute::io::OutputHandlerRegistry _output_registry;

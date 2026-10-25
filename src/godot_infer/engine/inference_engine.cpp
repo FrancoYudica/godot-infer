@@ -3,6 +3,7 @@
 #include "stages/compile/lowering/lowering.hpp"
 #include "stages/compile/lowering/lowering_validation.hpp"
 #include "stages/compile/lowering/utils.hpp"
+#include "stages/execute/dispatch/dispatcher.hpp"
 #include "stages/execute/shape_inference/shape_inference.hpp"
 
 #include <godot_cpp/classes/rd_shader_file.hpp>
@@ -77,15 +78,15 @@ void MLInferenceEngine::init() {
     ERR_FAIL_COND_MSG(!_rd, "InferenceEngine: Could not get RenderingDevice.");
 
     ERR_FAIL_COND_MSG(
-        !_operator_registry.init(_rd),
+        !_operator_registry.init(_rd, &_shader_cache),
         "InferenceEngine: failed to initialize operator registry.");
 
     ERR_FAIL_COND_MSG(
-        !_input_registry.init(_rd),
+        !_input_registry.init(_rd, &_shader_cache),
         "InferenceEngine: failed to initialize input registry.");
 
     ERR_FAIL_COND_MSG(
-        !_output_registry.init(_rd),
+        !_output_registry.init(_rd, &_shader_cache),
         "InferenceEngine: failed to initialize output registry.");
 
     RenderingServer::get_singleton()->connect(
@@ -304,8 +305,8 @@ void MLInferenceEngine::_process_task(Ref<InferenceTask> task) {
     for (size_t node_index = 0; node_index < graph.nodes.size(); ++node_index) {
         const gdinfer::compile::lowering::Physical::Node& node = graph.nodes[node_index];
         _run_node(
-            graph, source_ops, infer_result.dispatch_data[node_index], node,
-            compute_list, initializers_tm, task->activations_tm, shape_table);
+            infer_result.dispatch_data[node_index], node,
+            compute_list, initializers_tm, task->activations_tm);
         _rd->compute_list_add_barrier(compute_list);
         _capture_timestamp(
             String::num(task->task_id) + ":" +
@@ -354,37 +355,32 @@ void MLInferenceEngine::_allocate_activations(
 }
 
 void MLInferenceEngine::_run_node(
-    const gdinfer::compile::lowering::Physical::Graph& graph,
-    const gdinfer::compile::lowering::SourceOpTable& source_ops,
     const gdinfer::execute::shape_inference::DispatchData& dispatch_data,
     const gdinfer::compile::lowering::Physical::Node& node,
     int64_t compute_list,
     Ref<gdinfer::execute::tensors::TensorResourceManager> initializers_tm,
-    Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm,
-    const gdinfer::execute::shape_inference::ShapeTable& shape_table) {
+    Ref<gdinfer::execute::tensors::TensorResourceManager> activations_tm) {
 
     auto op = _operator_registry.get(node.op);
     ERR_FAIL_COND_MSG(op == nullptr, "MLInferenceEngine: unsupported operator, skipping node.");
 
     gdinfer::execute::operators::OperatorContext ctx{
-        .rd = _rd,
-        .initializers_tm = initializers_tm,
         .activations_tm = activations_tm,
-        .compute_list = compute_list,
         .frame_deletion_stack = &_frame_deletion_stack,
-        .shape_table = &shape_table,
-        .graph = &graph,
-        .source_ops = &source_ops,
         .dispatch_data = &dispatch_data};
 
-    op->dispatch(node, ctx);
+    auto descriptor = op->build(node, ctx);
+    if (descriptor.has_value()) {
+        gdinfer::execute::dispatch::execute(_rd, *descriptor, activations_tm, initializers_tm, compute_list, &_frame_deletion_stack);
+    }
 }
 
 void MLInferenceEngine::_free_all_resources() {
     for (auto& [_, graph_context] : _graphs) {
         graph_context.initializers_tm->destroy();
     }
-    _operator_registry.destroy(_rd);
+    _operator_registry.destroy();
+    _shader_cache.destroy(_rd);
     _input_registry.destroy(_rd);
     _output_registry.destroy(_rd);
     _frame_deletion_stack.process();

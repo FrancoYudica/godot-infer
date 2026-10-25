@@ -5,8 +5,7 @@ namespace gdinfer::execute::io {
 
 class TextureOutputHandlerCompute : public IOutputHandler {
   public:
-    bool init(godot::RenderingDevice* rd) override;
-    void destroy(RenderingDevice* rd) override;
+    bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache) override;
     void dispatch(
         const std::unique_ptr<OutputDesc::BaseData>& desc,
         const OutputHandlerContext& ctx) override;

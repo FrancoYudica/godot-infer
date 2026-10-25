@@ -3,7 +3,7 @@
 
 namespace gdinfer::compile::lowering::Physical {
 
-enum class Operator {
+enum class Operator : uint8_t {
     Gemm,
     ReLU,
     Sigmoid,

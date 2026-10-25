@@ -1,7 +1,6 @@
 #include "texture_output_handler_compute.hpp"
 
 #include "core/core.hpp"
-#include "stages/execute/utils.hpp"
 
 #include <godot_cpp/classes/rd_texture_format.hpp>
 
@@ -30,21 +29,11 @@ bool is_supported_format(
 } // namespace
 namespace gdinfer::execute::io {
 
-bool TextureOutputHandlerCompute::init(godot::RenderingDevice* rd) {
-    // Shader and pipeline creation
-    const String path = "shaders/texture_write.glsl";
-    const String& shader_path = utils::get_project_relative_path(path);
-    _shader_rid = utils::load_shader(rd, shader_path);
-    ERR_FAIL_COND_V_MSG(
-        !_shader_rid.is_valid(),
-        false,
-        "Failed to load shader.");
-
-    _pipeline_rid = rd->compute_pipeline_create(_shader_rid);
-    ERR_FAIL_COND_V_MSG(
-        !_pipeline_rid.is_valid(),
-        false,
-        "Failed to create compute pipeline.");
+bool TextureOutputHandlerCompute::init(godot::RenderingDevice* rd, ShaderCache* shader_cache) {
+    const auto* entry = shader_cache->get_or_load(rd, "shaders/texture_write.glsl");
+    ERR_FAIL_COND_V_MSG(entry == nullptr, false, "Failed to load texture_write shader.");
+    _shader_rid = entry->shader;
+    _pipeline_rid = entry->pipeline;
 
     // Uniform for texture sampler and storage buffer
     Ref<RDUniform> texture_uniform;
@@ -62,12 +51,6 @@ bool TextureOutputHandlerCompute::init(godot::RenderingDevice* rd) {
     _uniforms.push_back(tensor_uniform);
 
     return true;
-}
-
-void TextureOutputHandlerCompute::destroy(RenderingDevice* rd) {
-    _uniforms.clear();
-    rd->free_rid(_pipeline_rid);
-    rd->free_rid(_shader_rid);
 }
 
 void TextureOutputHandlerCompute::dispatch(

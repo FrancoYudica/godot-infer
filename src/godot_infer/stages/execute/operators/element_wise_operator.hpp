@@ -6,22 +6,16 @@ namespace gdinfer::execute::operators {
 // Base for any activation that operates element-wise with no extra params
 class ElementwiseOperator : public IOperator {
   public:
-    bool init(godot::RenderingDevice* rd) override;
-    void dispatch(
+    bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache) override;
+    std::optional<dispatch::DispatchDescriptor> build(
         const Physical::Node& node,
         const OperatorContext& ctx) override;
-    void destroy(godot::RenderingDevice* rd) override;
 
   protected:
     // Subclasses provide the shader path
     virtual const char* shader_path() const = 0;
 
   private:
-    struct PushConstants {
-        uint32_t total;
-        float padding[3]; // Alignment to 16 bytes
-    };
-
     godot::RID _shader;
     godot::RID _pipeline;
 };

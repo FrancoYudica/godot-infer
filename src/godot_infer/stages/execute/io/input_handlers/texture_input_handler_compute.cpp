@@ -1,7 +1,5 @@
 #include "texture_input_handler_compute.hpp"
 
-#include "stages/execute/utils.hpp"
-
 #include <godot_cpp/classes/rd_sampler_state.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 using namespace godot;
@@ -17,23 +15,11 @@ struct PushConstants {
 
 namespace gdinfer::execute::io {
 
-bool TextureInputHandlerCompute::init(RenderingDevice* rd) {
-    // Shader and pipeline creation
-    const String path = "shaders/texture_sample.glsl";
-    const String& shader_path = utils::get_project_relative_path(path);
-    _shader_rid = utils::load_shader(rd, shader_path);
-
-    ERR_FAIL_COND_V_MSG(
-        !_shader_rid.is_valid(),
-        false,
-        "Failed to load shader.");
-
-    _pipeline_rid = rd->compute_pipeline_create(_shader_rid);
-
-    ERR_FAIL_COND_V_MSG(
-        !_pipeline_rid.is_valid(),
-        false,
-        "Failed to create compute pipeline.");
+bool TextureInputHandlerCompute::init(RenderingDevice* rd, ShaderCache* shader_cache) {
+    const auto* entry = shader_cache->get_or_load(rd, "shaders/texture_sample.glsl");
+    ERR_FAIL_COND_V_MSG(entry == nullptr, false, "Failed to load texture_sample shader.");
+    _shader_rid = entry->shader;
+    _pipeline_rid = entry->pipeline;
 
     // Creates a linear sampler
     Ref<RDSamplerState> sampler_state;
@@ -65,10 +51,9 @@ bool TextureInputHandlerCompute::init(RenderingDevice* rd) {
 }
 
 void TextureInputHandlerCompute::destroy(RenderingDevice* rd) {
+    // Shader/pipeline live in ShaderCache; only the sampler belongs to this handler.
     _uniforms.clear();
     rd->free_rid(_sampler_rid);
-    rd->free_rid(_pipeline_rid);
-    rd->free_rid(_shader_rid);
 }
 
 std::vector<int64_t> TextureInputHandlerCompute::get_shape(const std::unique_ptr<InputDesc::BaseData>& desc) const {

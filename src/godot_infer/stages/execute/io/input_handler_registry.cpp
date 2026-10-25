@@ -6,14 +6,14 @@
 
 namespace gdinfer::execute::io {
 
-bool InputHandlerRegistry::init(godot::RenderingDevice* rd) {
+bool InputHandlerRegistry::init(godot::RenderingDevice* rd, ShaderCache* shader_cache) {
     // Register all supported operators
     ERR_FAIL_COND_V_MSG(
-        !_register<FloatArrayInputHandler>(InputType::FloatArray, rd),
+        !_register<FloatArrayInputHandler>(InputType::FloatArray, rd, shader_cache),
         false,
         "InputHandlerRegistry: failed to register FloatArray operator.");
     ERR_FAIL_COND_V_MSG(
-        !_register<TextureInputHandlerCompute>(InputType::Texture2D, rd),
+        !_register<TextureInputHandlerCompute>(InputType::Texture2D, rd, shader_cache),
         false,
         "InputHandlerRegistry: failed to register Texture operator.");
 

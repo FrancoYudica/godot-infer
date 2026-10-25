@@ -5,11 +5,10 @@
 namespace gdinfer::execute::operators {
 class ReshapeOperator : public IOperator {
   public:
-    virtual bool init(godot::RenderingDevice* rd) override;
-    virtual void dispatch(
+    virtual bool init(godot::RenderingDevice* rd, ShaderCache* shader_cache) override;
+    virtual std::optional<dispatch::DispatchDescriptor> build(
         const Physical::Node& node,
         const OperatorContext& ctx) override;
-    void destroy(godot::RenderingDevice* rd) override;
 };
 
 } // namespace gdinfer::execute::operators
