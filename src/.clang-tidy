@@ -27,7 +27,8 @@ Checks: >
     -readability-identifier-naming,
     -readability-inconsistent-ifelse-braces,
     -readability-magic-numbers,
-    -readability-math-missing-parentheses
+    -readability-math-missing-parentheses,
+    -readability-redundant-access-specifiers
 WarningsAsErrors: ""
 HeaderFilterRegex: "^.*/godot_infer/.*"
 FormatStyle: file

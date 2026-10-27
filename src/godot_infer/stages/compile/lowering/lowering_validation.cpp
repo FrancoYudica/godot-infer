@@ -55,7 +55,6 @@ OperationResult check_node_arity(size_t idx, const Physical::Node& node) {
         }
         break;
     case Physical::Operator::Gemm:
-    case Physical::Operator::Conv:
         if (node.inputs.size() != 3) {
             return {.success = false, .error = ctx + "expected 3 inputs, got " + std::to_string(node.inputs.size())};
         }
@@ -94,7 +93,6 @@ OperationResult check_node_attributes(size_t idx, const Physical::Node& node) {
 
     switch (node.op) {
     case Physical::Operator::Im2Col:
-    case Physical::Operator::Conv:
         if (!std::holds_alternative<Physical::ConvAttrs>(node.attributes)) {
             return {.success = false, .error = ctx + "expected ConvAttributes variant"};
         }

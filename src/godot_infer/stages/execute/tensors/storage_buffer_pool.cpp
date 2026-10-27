@@ -44,7 +44,7 @@ StorageBufferHandle StorageBufferPool::get(uint32_t p_size, godot::PackedByteArr
 
     // Create a new buffer if the pool is empty
     StorageBufferHandle new_handle = _next_buffer_handle++;
-    _StorageBufferData data;
+    BufferData data;
     data.size = p_size;
     data.available = false; // Immediately used
     data.rid = _rd->storage_buffer_create(p_size, p_data);

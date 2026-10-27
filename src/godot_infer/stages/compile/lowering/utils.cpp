@@ -15,8 +15,6 @@ std::string op_name(Physical::Operator op) {
         return "ReLU";
     case Physical::Operator::Sigmoid:
         return "Sigmoid";
-    case Physical::Operator::Conv:
-        return "Conv";
     case Physical::Operator::Im2Col:
         return "Im2Col";
     case Physical::Operator::Col2Im:

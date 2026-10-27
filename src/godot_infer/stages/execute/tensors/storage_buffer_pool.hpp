@@ -6,15 +6,16 @@
 
 namespace gdinfer::execute::tensors {
 
-typedef uint32_t StorageBufferHandle;
-
-struct _StorageBufferData {
-    godot::RID rid;
-    uint32_t size;
-    bool available;
-};
+using StorageBufferHandle = uint32_t;
 
 class StorageBufferPool {
+
+    struct BufferData {
+        godot::RID rid;
+        uint32_t size;
+        bool available;
+    };
+
   public:
     constexpr static StorageBufferHandle INVALID_HANDLE = 0;
 
@@ -36,7 +37,7 @@ class StorageBufferPool {
   private:
     godot::RenderingDevice* _rd;
 
-    std::map<StorageBufferHandle, _StorageBufferData> _buffers;
+    std::map<StorageBufferHandle, BufferData> _buffers;
 
     // Multi-map allows multiple buffers of the same size to be pooled
     std::multimap<uint32_t, StorageBufferHandle> _pool;

@@ -56,7 +56,7 @@ IOperator* OperatorRegistry::get(Physical::Operator op) const {
 }
 
 bool OperatorRegistry::supports(Physical::Operator op) const {
-    return _operators.count(op) > 0;
+    return _operators.contains(op);
 }
 
 void OperatorRegistry::destroy() {
